@@ -1,0 +1,108 @@
+#ifndef  SYSTEM_H
+#define SYSTEM_H
+
+#include<opencv2/core.hpp>
+#include"TrackBlock.h"
+#include<thread>
+#include"ScanRelocate.h"
+#include<vector>
+#include<Cluster.h>
+
+using namespace std;
+
+namespace LED_POSITION
+{
+
+class TrackBlock;
+class ScanRelocate;
+class Cluster;
+
+class System
+{
+public:
+    enum eSysStatus{
+        OK=0,
+        LOSTING=1
+    };
+private://data
+    //跟踪块参数
+    int mTrackBlockWidth;
+    int mTrackBlockCodeLen=3;//bit
+    //决定mTrackBlockWidth的大小，根据轮廓面积来给出TrackBlockWidth
+    double mTrackBlockWidth_Sarea=13;  
+
+    //系统状态
+    eSysStatus sysStatus;
+    int lostingTB_Num;//丢失的跟踪块数目
+
+    //新的一个线程，全图扫描，重新找寻丢失的跟踪块
+    std::thread mptScanRelocate;
+    ScanRelocate* mpScanRelocater;
+
+    //原始图像
+    Mat frame,frame_last,frame_pre;
+    //低分辨率图像
+    Mat re_frame,re_frame_last,re_frame_pre;
+    //更改分辨率size
+    Size lowSize;
+    double sizek;//-------高分辨率原始图像宽/低分辨率图像宽  >0
+
+    //颜色常量
+    Scalar lower_blue;
+    Scalar upper_blue;
+    Scalar lower_green;
+    Scalar upper_green;
+    Scalar lower_red0;
+    Scalar upper_red0;
+    Scalar lower_red1;
+    Scalar upper_red1;
+
+    //用于初始化的时候状态转移
+    int initCntFlag;
+    vector<Point2f> initContourCenters_c;  //用于初始化的时候存储轮廓点缓存
+    vector<double> initSarea_c;   //用于初始化的时候存储轮廓点面积缓存
+
+    //聚类器
+    Cluster mCluster;
+
+public://data
+    //跟踪块，在初始化之后，push进，之后不再增加或减少
+    std::vector<TrackBlock> mTrackBlocks;
+
+
+
+public:
+    //构造的时候提供第一帧的图像
+    //resizek:降低分辨率系数 应大于1
+    System(Mat frame0,double resizek);
+    ~System();
+
+    //初始化函数
+    //注意这个函数需要重复使用，要一直调用到返回值为1未知
+    //返回初始化是否完成：0未完成；1已完成；-1初始化失败
+    int Init(Mat frameInput);
+
+    //系统主程序
+    void position(Mat frameInput);
+
+    //hsv差分，全局图像颜色差分，默认采用低分辨率图像，所以输出图像也是低分辨率的
+    //nowColor：当前帧的颜色  {'R','G','B'}
+    //lastColor：上一帧的颜色
+    Mat diffFrame(char nowColor,char lastColor);
+
+    //查找满足要求的轮廓的中心点
+    //inputImg:输入图像
+    //Sarea:轮廓面积要大于这个数
+    vector<Point2f> findContourCenter(Mat inputImg ,vector<double> &Sarea);
+
+
+    
+
+};
+
+
+
+
+
+}//namespace LED_POSITION
+#endif 
