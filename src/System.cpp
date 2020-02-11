@@ -30,6 +30,13 @@ System::System(Mat frame0,double resizek)
 
      initCntFlag=0;
 
+
+     //初始化重定位线程
+     mpScanRelocater=new ScanRelocate(this);
+     mptScanRelocate = new thread(&LED_POSITION::ScanRelocate::Run, mpScanRelocater);
+     
+     
+
 }
 
 System::~System()

@@ -26,7 +26,7 @@ int main(int argc, char const *argv[])
     //主循环
     while (cap.read(frame))
     {
-        printf("track:\n");
+        //printf("track:\n");
         time_t start,stop;
         double totaltime;
         start=getTickCount();
@@ -51,7 +51,7 @@ int main(int argc, char const *argv[])
         //printf("Use Time:%ldms\n",(stop-start)/1000000);   
         
         imshow("src",frame);
-        waitKey(0);
+        waitKey(1);
         
         
     }

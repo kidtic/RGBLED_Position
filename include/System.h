@@ -36,7 +36,7 @@ private://data
     int lostingTB_Num;//丢失的跟踪块数目
 
     //新的一个线程，全图扫描，重新找寻丢失的跟踪块
-    std::thread mptScanRelocate;
+    std::thread* mptScanRelocate;
     ScanRelocate* mpScanRelocater;
 
     //原始图像

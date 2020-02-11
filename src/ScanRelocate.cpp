@@ -12,5 +12,15 @@ ScanRelocate::~ScanRelocate()
 {
 }
 
+void ScanRelocate::Run()
+{
+    while (1)
+    {
+        sleep(1);
+        cout<<"ScanRelocate thread"<<endl;
+    }
+    
+}
+
 }
 
