@@ -5,8 +5,7 @@ namespace LED_POSITION
     
 System::System(Mat frame0,double resizek)
 {
-    mpScanRelocater = new ScanRelocate(this);
-
+    //mpScanRelocater=new ScanRelocate(this);
     lower_blue=Scalar(100-5, 60, 140);
      upper_blue=Scalar(125+5, 255,255);
      lower_green=Scalar(35-5, 60,140);
@@ -32,7 +31,7 @@ System::System(Mat frame0,double resizek)
 
 
      //初始化重定位线程
-     mpScanRelocater=new ScanRelocate(this);
+     mpScanRelocater=new ScanRelocate(this,frame0);
      mptScanRelocate = new thread(&LED_POSITION::ScanRelocate::Run, mpScanRelocater);
      
      
@@ -46,7 +45,7 @@ System::~System()
 
 int System::Init(Mat frameInput)
 {
-    int ret;
+    int ret=0;
     frame=frameInput;
     resize(frame,re_frame,lowSize);
 
@@ -55,7 +54,7 @@ int System::Init(Mat frameInput)
     
     //差分（针对低分辨率）
     Mat diff_mask_rg = diffFrame('G','R');
-    //imshow("diff",diff_mask_rg);
+    imshow("diff",diff_mask_rg);
     vector<double> Sarea;
     vector<Point2f> contourCenters = findContourCenter(diff_mask_rg,Sarea);
     
@@ -86,15 +85,26 @@ int System::Init(Mat frameInput)
         mCluster.clustering();
         vector<Point2f> ledct;
         mCluster.getCenter(ledct);
-        //创建跟踪块
-        for (size_t i = 0; i < ledct.size(); i++)
+        if(Sarea_avg>3)
         {
-            mTrackBlocks.push_back(TrackBlock(frame,ledct[i]*sizek,mTrackBlockWidth,mTrackBlockCodeLen));
+            //创建跟踪块
+            for (size_t i = 0; i < ledct.size(); i++)
+            {
+                Point2f iniCt=ledct[i]*sizek;
+                //判断是否超界
+                if((iniCt.x+mTrackBlockWidth/2)<frame.cols-1&&
+                    (iniCt.x-mTrackBlockWidth/2)>1 &&
+                    (iniCt.y+mTrackBlockWidth/2)<frame.rows-1&&
+                    (iniCt.y-mTrackBlockWidth/2)>1  )
+                    {
+                        mTrackBlocks.push_back(TrackBlock(&mMutexTrackBlocks,frame,ledct[i]*sizek,mTrackBlockWidth,mTrackBlockCodeLen));
+                        ret=1;
+                    }
+            }
+        
         }
-        
-        
 
-        ret=1;
+        
     }
     
 
@@ -108,20 +118,23 @@ int System::Init(Mat frameInput)
 
 void System::position(Mat frameInput)
 {
-    frame=frameInput.clone();
-    resize(frame,re_frame,lowSize);
-
-
+    
+    {
+        unique_lock<mutex> lock(mMutexFrame);
+        frame=frameInput.clone();
+    }
+    setInputScanRelocateFlag(true);
+    //resize(frame,re_frame,lowSize);
     
     for (size_t i = 0; i < mTrackBlocks.size(); i++)
     {
-        mTrackBlocks[i].track(frame);
+        mTrackBlocks[i].track(frameInput);
     }
     
-    frame_pre=frame_last.clone();
-    frame_last=frame.clone();
-    re_frame_pre=re_frame_last.clone();
-    re_frame_last=re_frame.clone();
+    //frame_pre=frame_last.clone();
+    //frame_last=frame.clone();
+    //re_frame_pre=re_frame_last.clone();
+    //re_frame_last=re_frame.clone();
 }
 
 
@@ -177,6 +190,51 @@ vector<Point2f> System::findContourCenter(Mat inputImg ,vector<double> &Sarea)
     return retpoint;
 
 
+}
+
+double System::getTrackBlockWidth_Sarea()
+{
+    return mTrackBlockWidth_Sarea;
+}
+int System::getTrackBlockCodeLen()
+{
+    return mTrackBlockCodeLen;
+}
+
+Size System::getLowSize()
+{
+    return lowSize;
+}
+Mat System::getFrame(int times)
+{
+     unique_lock<mutex> lock(mMutexFrame);
+    if(times==0)
+    {
+        return frame;
+    }
+    else if(times==1)
+    {
+        return frame_last;
+    }
+    else if(times==2)
+    {
+        return frame_pre;
+    }
+    else
+        return frame;
+    
+}
+
+void System::setInputScanRelocateFlag(bool flg)
+{
+     unique_lock<mutex> lock(mMutexInputFlag);
+     mInputScanRelocateFlag=flg;
+}
+
+bool System::getInputScanRelocateFlag()
+{
+    unique_lock<mutex> lock(mMutexInputFlag);
+    return mInputScanRelocateFlag;
 }
 
 }//namespace LED_POSITION

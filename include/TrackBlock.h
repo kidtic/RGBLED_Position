@@ -6,6 +6,8 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include<iostream>
+#include<mutex>
+#include"System.h"
 
 
 
@@ -14,6 +16,7 @@ using namespace std;
 
 namespace LED_POSITION
 {
+class System;
 //跟踪块
 class TrackBlock
 {
@@ -23,7 +26,7 @@ public:
         OK=0,
         LOSTING=1,
         PREPARE=2,//系统初始化后，还没有读取code，正在读取code状态
-        SUSPECTED_LOST,//疑似丢失
+        SUSPECTED_LOST=3,//疑似丢失
     };
 
     //LED编码的读取状态
@@ -32,14 +35,16 @@ public:
         READING=1
     };
     
-private://data
+protected://data
     //块区域，rio感兴趣区域，是相对于System的原始图像
     Rect rect;
     Rect rect_last;//上一帧的块区域
     Rect rect_pre;//上上一帧的块区域
+    Size srcImgSize;
 
     //中心点，该跟踪块所跟踪的LED的中心点，是相对于原始图像的。
     Point2f ledCenter;
+    //std::mutex mMutexCenter;
     double mContourArea;//轮廓面积
     Point2f mVelocity;//上一帧的运动速度
     //决定mTrackBlockWidth的大小，根据轮廓面积来给出TrackBlockWidth
@@ -52,15 +57,18 @@ private://data
 
     //此时的跟踪状态
     eTrackStatus TrackStatus;
+    //std::mutex mMutexTrackStatus;
+
 
     //编码信息
     int codeLength;//编码的长度
     eCodeStatus codeStatus;//编码状态
     std::vector<int> codeCashe;//编码缓存队列，每3帧读取一位
     int codeID;//编码ID 
+    //std::mutex mMutexCodeID;
 
     //读取编码信息需要的变量
-    const int mInterval=6;//读取信息的帧数间隔
+    int mInterval=6;//读取信息的帧数间隔
     int mpReadCodeImg;  //计数指针，在检测到R->G后，每隔3帧 读取一次编码信息
     int mpReadCodeImg_fp=-2;//这个值为<=0的数，在检测到R->G后，等待多久开始读取一次编码信息，这样可以让编码值取在中间
     int mpReadCodeCNT;//计数指针，在检测到R->G后，读取了多少信息，不超过codeLength
@@ -77,13 +85,18 @@ private://data
     Scalar upper_red0;
     Scalar lower_red1;
     Scalar upper_red1;
-    
+
+
+    //System *mpSystem;
+    std::mutex* pSysMutex; 
     
 
 
 public:
+    TrackBlock(std::mutex *pMutex,Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength);
     TrackBlock(Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength);
     ~TrackBlock();
+    
 
     //跟踪函数
     //输入当前帧的原始图像，会根据块区域来识别新的LED点在哪里
@@ -107,6 +120,19 @@ public:
     Point2f getCenter();
     int getcodeID();
     Rect getTrackRect();
+    eTrackStatus getStatus();
+
+    //设置数据
+    void setCenter(Point2f p);
+    void setcodeID(int id);
+    void setStatus(eTrackStatus status);
+    bool setTrackRect(Rect rt);
+    //加锁
+    void mutexLock();
+    void mutexUnLock();
+
+
+
 };
 
 

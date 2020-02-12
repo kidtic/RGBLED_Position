@@ -34,7 +34,7 @@ void Cluster::clustering()
 {
     //组合数，计算两两之间的距离
     vector<Vec2i> listpoint_connect;//需要聚类的点
-    double clusteresp=10;  //领域距离
+    double clusteresp=esp;  //领域距离
     for(int i=0;i<listpoint.size();i++)
     {
         for(int j=i+1;j<listpoint.size();j++)
@@ -128,6 +128,11 @@ int Cluster::findVec_int(vector<int> a,int b)
         if(a[i]==b) return i;
     }
     return -1;
+}
+
+vector<int> Cluster::getDataID()
+{
+    return classid;
 }
 
 }

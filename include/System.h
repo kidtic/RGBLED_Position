@@ -7,6 +7,7 @@
 #include"ScanRelocate.h"
 #include<vector>
 #include<Cluster.h>
+#include <mutex>
 
 using namespace std;
 
@@ -25,11 +26,6 @@ public:
         LOSTING=1
     };
 private://data
-    //跟踪块参数
-    int mTrackBlockWidth;
-    int mTrackBlockCodeLen=3;//bit
-    //决定mTrackBlockWidth的大小，根据轮廓面积来给出TrackBlockWidth
-    double mTrackBlockWidth_Sarea=13;  
 
     //系统状态
     eSysStatus sysStatus;
@@ -38,14 +34,17 @@ private://data
     //新的一个线程，全图扫描，重新找寻丢失的跟踪块
     std::thread* mptScanRelocate;
     ScanRelocate* mpScanRelocater;
+    std::mutex mMutexInputFlag;
+    bool mInputScanRelocateFlag=false;
 
-    //原始图像
-    Mat frame,frame_last,frame_pre;
-    //低分辨率图像
-    Mat re_frame,re_frame_last,re_frame_pre;
-    //更改分辨率size
-    Size lowSize;
-    double sizek;//-------高分辨率原始图像宽/低分辨率图像宽  >0
+    //用于初始化的时候状态转移
+    int initCntFlag;
+    vector<Point2f> initContourCenters_c;  //用于初始化的时候存储轮廓点缓存
+    vector<double> initSarea_c;   //用于初始化的时候存储轮廓点面积缓存
+
+    //跟踪块参数
+    int mTrackBlockWidth;
+    int mTrackBlockCodeLen=3;//bit
 
     //颜色常量
     Scalar lower_blue;
@@ -57,18 +56,28 @@ private://data
     Scalar lower_red1;
     Scalar upper_red1;
 
-    //用于初始化的时候状态转移
-    int initCntFlag;
-    vector<Point2f> initContourCenters_c;  //用于初始化的时候存储轮廓点缓存
-    vector<double> initSarea_c;   //用于初始化的时候存储轮廓点面积缓存
+    //决定mTrackBlockWidth的大小，根据轮廓面积来给出TrackBlockWidth
+    double mTrackBlockWidth_Sarea=13;  
 
-    //聚类器
-    Cluster mCluster;
+    //原始图像
+    std::mutex mMutexFrame;
+    Mat frame,frame_last,frame_pre;
+    //低分辨率图像
+    Mat re_frame,re_frame_last,re_frame_pre;
+
+    //更改分辨率size
+    Size lowSize;
+    double sizek;//-------高分辨率原始图像宽/低分辨率图像宽  >0
+
+
 
 public://data
     //跟踪块，在初始化之后，push进，之后不再增加或减少
     std::vector<TrackBlock> mTrackBlocks;
+    std::mutex mMutexTrackBlocks;
 
+     //聚类器
+    Cluster mCluster;
 
 
 public:
@@ -95,6 +104,18 @@ public:
     //Sarea:轮廓面积要大于这个数
     vector<Point2f> findContourCenter(Mat inputImg ,vector<double> &Sarea);
 
+    //返回一些参数
+    double getTrackBlockWidth_Sarea();
+    int getTrackBlockCodeLen();
+    Size getLowSize();
+
+    //需要互斥锁
+    //返回图像 times=0 表示当前帧
+    Mat getFrame(int times);
+
+    //设置重新定位线程的输入输出标志位
+    void setInputScanRelocateFlag(bool flg);
+    bool getInputScanRelocateFlag();
 
     
 

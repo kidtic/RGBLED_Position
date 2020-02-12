@@ -38,6 +38,7 @@ public:
     //返回中心点与其ID号
     void getCenter(vector<Point2f> &OutputCenter,vector<int> &OutputCenterID);
     void getCenter(vector<Point2f> &OutputCenter);
+    vector<int> getDataID();
 
 
     //判断元素首否在vecter里,返回索引
