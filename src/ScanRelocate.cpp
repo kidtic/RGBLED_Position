@@ -220,7 +220,7 @@ Mat ScanRelocate::diffFrame(char nowColor,char lastColor)
     //这里主要目的是要动态差分
     dilate(last_mask_r,last_mask_r,getStructuringElement(MORPH_CROSS,Size(7,7)));
     
-    //diff
+    //diffS
     Mat diff_mask_rg;
     bitwise_and(mask_g,last_mask_r,diff_mask_rg);
 
@@ -279,47 +279,6 @@ void ScanRelocate::recoverBT()
     
 }
 
-
-//------------BT
-/*
-
-Point2f noMutexTB::getCenter()
-{
-    return ledCenter;
-}
-int noMutexTB::getcodeID()
-{
-    return codeID;
-}
-Rect noMutexTB::getTrackRect()
-{
-    return rect;
-}
-TrackBlock::eTrackStatus noMutexTB::getStatus()
-{
-    return TrackStatus;
-}
-//设置数据
-void noMutexTB::setCenter(Point2f p)
-{
-    ledCenter=p;
-}
-void noMutexTB::setcodeID(int id)
-{
-    codeID=id;
-}
-void noMutexTB::setStatus(eTrackStatus status)
-{
-    TrackStatus=status;
-}
-
-void noMutexTB::mutexLock()
-{
-}
-void noMutexTB::mutexUnLock()
-{
-}
-*/
 
 
 }

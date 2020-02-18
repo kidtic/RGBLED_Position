@@ -122,7 +122,6 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
         //cout<<"rgbcode:"<<rgbcode<<endl;
         //S3：根据移动向量更新rect
         //更新跟踪块大小(根据轮廓面积)
-        //mMutexCenter.lock();
         Rect cRect;
         cRect.width=rect.width;
         cRect.height=rect.height;

@@ -21,7 +21,7 @@ int main(int argc, char const *argv[])
     cap.read(frame);
     LED_POSITION::System ledTrack(frame,2);
     int ff=0;
-    namedWindow("src",0);
+    namedWindow("src");
 
     //主循环
     while (cap.read(frame))
@@ -42,16 +42,18 @@ int main(int argc, char const *argv[])
         for (size_t i = 0; i < ledTrack.mTrackBlocks.size(); i++)
         {
             Point2f pc=ledTrack.mTrackBlocks[i].getCenter();
-            //circle(frame,pc,15,Scalar(255,255,0),3);
-            rectangle(frame,ledTrack.mTrackBlocks[i].getTrackRect(),Scalar(255,255,0),1);
+            circle(frame,pc,15,Scalar(255,255,0),4);
+            //rectangle(frame,ledTrack.mTrackBlocks[i].getTrackRect(),Scalar(255,255,0),1);
             int idd=ledTrack.mTrackBlocks[i].getcodeID();
-            putText(frame, to_string(idd), pc+Point2f(0,-10), FONT_HERSHEY_COMPLEX, 1.0, Scalar(100, 200, 200), 2);
+            putText(frame, to_string(idd), pc+Point2f(0,-20), FONT_HERSHEY_COMPLEX, 1.3, Scalar(100, 200, 200), 2);
         }
         stop = getTickCount();
         //printf("Use Time:%ldms\n",(stop-start)/1000000);   
         
         imshow("src",frame);
-        waitKey(1);
+        int key=waitKey(1);
+        if(key=='q') break;
+        usleep(9000);
         
         
     }

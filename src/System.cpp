@@ -54,7 +54,7 @@ int System::Init(Mat frameInput)
     
     //差分（针对低分辨率）
     Mat diff_mask_rg = diffFrame('G','R');
-    imshow("diff",diff_mask_rg);
+    //imshow("diff",diff_mask_rg);
     vector<double> Sarea;
     vector<Point2f> contourCenters = findContourCenter(diff_mask_rg,Sarea);
     

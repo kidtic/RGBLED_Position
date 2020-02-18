@@ -92,35 +92,7 @@ public:
     void recoverBT();
 };
 
-/*
-class noMutexTB: public TrackBlock
-{
-    public:
-        noMutexTB(Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength):TrackBlock(srcinput,initPoint,rectwidth,mcodeLength)
-        {
 
-        }
-        ~noMutexTB(){}
-
-        //重定义
-        Point2f getCenter();
-        int getcodeID();
-        Rect getTrackRect();
-        TrackBlock::eTrackStatus getStatus();
-
-        //设置数据
-        void setCenter(Point2f p);
-        void setcodeID(int id);
-        void setStatus(TrackBlock::eTrackStatus status);
-        //加锁
-        void mutexLock();
-        void mutexUnLock();
-
-
-
-};
-
-*/
 
 }//LED_POSITION
 
