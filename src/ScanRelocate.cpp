@@ -161,12 +161,11 @@ void ScanRelocate::Run()
             re_frame_last=re_frame.clone();
 
             stop = getTickCount();
-            printf("ScanRelocate Use Time:%ldms\n",(stop-start)/1000000);   
+            //printf("ScanRelocate Use Time:%ldms\n",(stop-start)/1000000);   
         }
         else
         {
             usleep(1000);
-            //printf("sleep\n");
         }
 
     }

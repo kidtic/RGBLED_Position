@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<r>"redmiCamera"</r>
+
+<M type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>d</dt>
+  <data>
+    1.2059391294496500e+03 0. 6.5966607528591305e+02 0.
+    1.2007547168825515e+03 3.3142486409158749e+02 0. 0. 1.</data></M>
+<D type_id="opencv-matrix">
+  <rows>1</rows>
+  <cols>5</cols>
+  <dt>d</dt>
+  <data>
+    -2.3309410899961722e-02 2.8052034547775162e-01
+    -5.5383479367145496e-03 2.8015296162695849e-03 0.</data></D>
+<R type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>3</cols>
+  <dt>f</dt>
+  <data>
+    0. 0. 0. 0. 0. 0. 0. 0. 0.</data></R>
+<T type_id="opencv-matrix">
+  <rows>3</rows>
+  <cols>1</cols>
+  <dt>f</dt>
+  <data>
+    0. 0. 0.</data></T>
+</opencv_storage>

@@ -1,9 +1,9 @@
-#include"System.h"
+#include "System.h"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/videoio.hpp"
-#include<time.h>
+#include <time.h>
 
 using namespace cv;
 using namespace std;
@@ -11,7 +11,16 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
-     VideoCapture cap(argv[1]);
+    string rtspstr="rtsp://admin:zou133zzq@192.168.123.110:554/cam/realmonitor?channel=1&amp;subtype=0&amp;unicast=true&amp;proto=Onvif";
+    string redstr="/home/kk/dataset/led/aimibot.mp4";
+    VideoCapture cap(0);
+    cap.set(cv::CAP_PROP_FRAME_HEIGHT,1080);
+    cap.set(cv::CAP_PROP_FRAME_WIDTH,1920);
+    //cap.set(cv::CAP_PROP_SETTINGS,1);    
+    //cap.set(cv::CAP_PROP_FOCUS,38);
+    //cap.set(cv::CAP_PROP_AUTO_EXPOSURE,0);
+    //cap.set(cv::CAP_PROP_EXPOSURE,-6);
+
 
     if(!cap.isOpened())
     {
@@ -19,7 +28,7 @@ int main(int argc, char const *argv[])
     }
     Mat frame;
     cap.read(frame);
-    LED_POSITION::System ledTrack(frame,2);
+    LED_POSITION::System ledTrack(frame,1);
     int ff=0;
     namedWindow("src");
 

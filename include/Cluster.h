@@ -1,5 +1,6 @@
-//聚类器
-
+/*******************
+ * 自定义的聚类算法 
+ */
 #ifndef  CLUSTER_H
 #define CLUSTER_H
 

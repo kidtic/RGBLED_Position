@@ -1,3 +1,7 @@
+/*******************
+ * 重定位模块
+ */
+
 #ifndef  SCANRELOCATE_H
 #define SCANRELOCATE_H
 
