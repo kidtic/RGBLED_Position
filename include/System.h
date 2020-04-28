@@ -22,13 +22,17 @@ class System
 {
 public:
     enum eSysStatus{
-        OK=0,
-        LOSTING=1
+        INIT=0,
+        POSITION=1
+    };
+    enum drawType{
+        CIRCLE=0,
+        BLOCK=1
     };
 private://data
 
     //系统状态
-    eSysStatus sysStatus;
+    eSysStatus sysStatus=INIT;//初始化状态和定位状态
     int lostingTB_Num;//丢失的跟踪块数目
 
     //新的一个线程，全图扫描，重新找寻丢失的跟踪块
@@ -89,10 +93,17 @@ public:
     //初始化函数
     //注意这个函数需要重复使用，要一直调用到返回值为1未知
     //返回初始化是否完成：0未完成；1已完成；-1初始化失败
-    int Init(Mat frameInput);
+    eSysStatus Init(Mat frameInput);
 
     //系统主程序
     void position(Mat frameInput);
+
+    //系统运行函数系统总架构
+    void run(Mat frameInput);
+
+    //画图
+    void drawObject(Mat& frameInput,drawType t);
+
 
     //hsv差分，全局图像颜色差分，默认采用低分辨率图像，所以输出图像也是低分辨率的
     //nowColor：当前帧的颜色  {'R','G','B'}

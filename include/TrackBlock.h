@@ -70,7 +70,7 @@ protected://data
     //读取编码信息需要的变量
     int mInterval=6;//读取信息的帧数间隔
     int mpReadCodeImg;  //计数指针，在检测到R->G后，每隔3帧 读取一次编码信息
-    int mpReadCodeImg_fp=-2;//这个值为<=0的数，在检测到R->G后，等待多久开始读取一次编码信息，这样可以让编码值取在中间
+    int mpReadCodeImg_fp=-1;//这个值为<=0的数，在检测到R->G后，等待多久开始读取一次编码信息，这样可以让编码值取在中间,重要！
     int mpReadCodeCNT;//计数指针，在检测到R->G后，读取了多少信息，不超过codeLength
     //R-G跳变信息，codeStatus=finish的时候，rgtbStatus='S',
     //当检测到R的时候rgtbStatus='R',然后在检测到G的时候rgtbStatus='G'

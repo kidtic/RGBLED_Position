@@ -43,9 +43,9 @@ System::~System()
 
 }
 
-int System::Init(Mat frameInput)
+System::eSysStatus System::Init(Mat frameInput)
 {
-    int ret=0;
+    eSysStatus ret=INIT;
     frame=frameInput;
     resize(frame,re_frame,lowSize);
 
@@ -63,7 +63,7 @@ int System::Init(Mat frameInput)
         initCntFlag=1;
         initContourCenters_c=contourCenters;
         initSarea_c=Sarea;
-        ret=0;
+        ret=INIT;
     }
     else if(initCntFlag==1)
     {
@@ -98,7 +98,7 @@ int System::Init(Mat frameInput)
                     (iniCt.y-mTrackBlockWidth/2)>1  )
                     {
                         mTrackBlocks.push_back(TrackBlock(&mMutexTrackBlocks,frame,ledct[i]*sizek,mTrackBlockWidth,mTrackBlockCodeLen));
-                        ret=1;
+                        ret=POSITION;
                     }
             }
         
@@ -137,7 +137,42 @@ void System::position(Mat frameInput)
     //re_frame_last=re_frame.clone();
 }
 
+void System::run(Mat frameInput)
+{
+    //--------------------主入口
+    if(sysStatus==INIT)
+        sysStatus=Init(frameInput);
+    else if(sysStatus==POSITION)
+    {
+        position(frameInput);
+    }
+}
 
+void System::drawObject(Mat& frameInput,System::drawType t)
+{
+    if(t==CIRCLE){
+        for (size_t i = 0; i < mTrackBlocks.size(); i++)
+        {
+            Point2f pc=mTrackBlocks[i].getCenter();
+            circle(frameInput,pc,15,Scalar(255,255,0),4);
+            //rectangle(frame,ledTrack.mTrackBlocks[i].getTrackRect(),Scalar(255,255,0),1);
+            int idd=mTrackBlocks[i].getcodeID();
+            putText(frameInput, to_string(idd), pc+Point2f(0,-20), FONT_HERSHEY_COMPLEX, 1.3, Scalar(100, 200, 200), 2);
+        }
+    }
+    else if(t==BLOCK){
+        for (size_t i = 0; i < mTrackBlocks.size(); i++)
+        {
+            Point2f pc=mTrackBlocks[i].getCenter();
+            //circle(frameInput,pc,15,Scalar(255,255,0),4);
+            rectangle(frameInput,mTrackBlocks[i].getTrackRect(),Scalar(255,255,0),1);
+            int idd=mTrackBlocks[i].getcodeID();
+            putText(frameInput, to_string(idd), Point(mTrackBlocks[i].getTrackRect().x,mTrackBlocks[i].getTrackRect().y), 
+                    FONT_HERSHEY_COMPLEX, 1.3, Scalar(100, 200, 200), 2);
+        }
+    }
+    
+}
 
 Mat System::diffFrame(char nowColor,char lastColor)
 {

@@ -131,6 +131,7 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
         cRect.x=ledCenter.x-(rect.width/2);
         cRect.y=ledCenter.y-(rect.height/2);
         mutexUnLock();
+        cout<<"rgbcode:"<<rgbcode<<endl;
 
         if(setTrackRect(cRect))//看是否越界
         {
@@ -140,6 +141,7 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
             if(mpReadCodeImg==mInterval-1)
             {
                 mpReadCodeImg=0;
+                cout<<"cut"<<endl;
                 if(rgbcode=='G')
                 {
                     codeCashe[mpReadCodeCNT]=0;
@@ -150,7 +152,7 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
                 }
                 else
                 {
-                    printf("error:读取code错误");
+                    cout<<"error:PREPARE:读取code错误 错误字节："<<mpReadCodeCNT<<endl;;
                     codeCashe[mpReadCodeCNT]=-9999;
                 }
                 mpReadCodeCNT++;
@@ -259,7 +261,7 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
                                 codeStatus=FINISH;
                                 rgtbStatus='S';
                                 mpReadCodeCNT=0;
-                                cout<<"SUSPECTED_LOST: codeID cant match!"<<endl;
+                                cout<<"SUSPECTED_LOST: codeID cant match!"<<mcodeID<<endl;
                             }
                             
                             
