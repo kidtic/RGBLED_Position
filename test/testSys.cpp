@@ -32,7 +32,7 @@ int main(int argc, char const *argv[])
         cap.set(cv::CAP_PROP_FRAME_HEIGHT,1080);
         cap.set(cv::CAP_PROP_FRAME_WIDTH,1920);
         //usleep(1000);
-        //cap.set(cv::CAP_PROP_FOCUS,58);
+        cap.set(cv::CAP_PROP_FPS,30);
         //cap.set(cv::CAP_PROP_FOCUS,10);
     }
     else{
@@ -66,7 +66,7 @@ int main(int argc, char const *argv[])
         //----------------画图
         ledTrack.drawObject(frame,LED_POSITION::System::BLOCK);
 
-        //printf("FPS:%ld\n",(getTickCount()-start)/1000000);  
+        //printf("FPS:%ld ms\n",(getTickCount()-start)/1000000);  
         start=getTickCount();
 
 
@@ -93,11 +93,16 @@ void v4l2_setting_focus(int val)
             cout<<"V4L2_CID_FOCUS_ABSOLUTE="<<ctrl.value<<endl;
             cout<<"set V4L2_CID_FOCUS_ABSOLUTE......"<<endl;
             struct v4l2_control ctrl1;
-            ctrl1.id=V4L2_CID_FOCUS_ABSOLUTE;
-            ctrl1.value=val;
+            ctrl1.id=V4L2_CID_FOCUS_AUTO;
+            ctrl1.value=0;
             int ret=ioctl(fd,VIDIOC_S_CTRL,&ctrl1);
             if (ret < 0)
-                perror("Set exposure failed (%d)\n"); 
+                perror("unset focus_auto  failed (%d)\n"); 
+            ctrl1.id=V4L2_CID_FOCUS_ABSOLUTE;
+            ctrl1.value=val;
+            ret=ioctl(fd,VIDIOC_S_CTRL,&ctrl1);
+            if (ret < 0)
+                perror("set focus failed (%d)\n"); 
         }
 
     }
