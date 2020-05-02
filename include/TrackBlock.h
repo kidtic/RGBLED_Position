@@ -103,6 +103,9 @@ public:
     //同时还会读取LED编码信息与上一帧的编码信息进行验证
     eTrackStatus track(Mat srcinput);
 
+    //卡尔曼filter
+    bool Kalmanfilter(Mat srcinput,char& rgbcode);
+
     //查找颜色轮廓，返回RGB的轮廓点
     //inputImg：输入图像
     //rgb：输出的rgb轮廓点

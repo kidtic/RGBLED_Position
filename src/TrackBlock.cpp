@@ -103,297 +103,201 @@ TrackBlock::~TrackBlock()
 
 TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
 {
-
-    BlockImg=srcinput(rect);
-    //imshow("BlockImg",BlockImg);
+    char rgbcode; 
+    Kalmanfilter(srcinput,rgbcode);
 
     if(getStatus()==PREPARE)
-    {
-        char rgbcode;
-        //S1：对BlockImg进行hsv识别+轮廓点检测
-        vector<Point2f> r_center,g_center,b_center;
-        vector<double> SS;
-        findContourCenterRGB(BlockImg,r_center,g_center,b_center,SS);
-        //S2：找出轮廓点里与中心点最接近的点，计算出移动向量，
-        //并且得到该轮廓点是RG还是B（若每找到先退出，下一帧一定能找到）
-        double Sarea_avg;
-        Vec2f minvec;
-        rgbcode=findminVecRGB(r_center,g_center,b_center,SS,minvec,Sarea_avg);
-        //cout<<"rgbcode:"<<rgbcode<<endl;
-        //S3：根据移动向量更新rect
-        //更新跟踪块大小(根据轮廓面积)
-        Rect cRect;
-        cRect.width=rect.width;
-        cRect.height=rect.height;
-        mutexLock();
-        ledCenter.x+=minvec[0];
-        ledCenter.y+=minvec[1];
-        cRect.x=ledCenter.x-(rect.width/2);
-        cRect.y=ledCenter.y-(rect.height/2);
-        mutexUnLock();
-        cout<<"rgbcode:"<<rgbcode<<endl;
-
-        if(setTrackRect(cRect))//看是否越界
+    {  
+        //S4：根据读编码计数规则来更新codeCashe
+        //查看是否到了读取时间
+        if(mpReadCodeImg==mInterval-1)
         {
-            //S4：根据读编码计数规则来更新codeCashe
-            //查看是否到了读取时间
-        
+            mpReadCodeImg=0;
+            cout<<"cut"<<endl;
+            if(rgbcode=='G')
+            {
+                codeCashe[mpReadCodeCNT]=0;
+            }
+            else if(rgbcode=='B')
+            {
+                codeCashe[mpReadCodeCNT]=1;
+            }
+            else
+            {
+                cout<<"error:PREPARE:读取code错误 错误字节："<<mpReadCodeCNT<<endl;;
+                codeCashe[mpReadCodeCNT]=-9999;
+            }
+            mpReadCodeCNT++;
+            if(mpReadCodeCNT==codeLength)//读取完成
+            {
+                mutexLock();
+                codeID=0;
+                for (size_t i = 0; i < codeLength; i++)
+                {
+                    codeID+=codeCashe[i]*pow(2,i);
+                }
+                mutexUnLock();
+                codeStatus=FINISH;
+                rgtbStatus='S';
+                setStatus(OK);
+                mpReadCodeCNT=0;
+            }
+        }
+        else if(mpReadCodeImg<mInterval-1)
+            mpReadCodeImg++;
+    }
+    else if(getStatus()==OK)
+    {
+        if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
+        {
+            if(rgtbStatus=='S' && rgbcode=='R') rgtbStatus='R';
+            else if(rgtbStatus=='R' && rgbcode=='G')
+            {
+                rgtbStatus='G';
+                codeStatus=READING;
+                //cout<<"FINISH->READING"<<endl;
+                mpReadCodeImg=mpReadCodeImg_fp;//隔一帧再开始读，保障不读到边缘值
+                mpReadCodeCNT=0;
+            }
+            else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
+            {
+                setStatus(SUSPECTED_LOST);
+                cout<<"SUSPECTED_LOST: FINISH, NO RGB"<<endl;
+            }
+        }
+        else if(codeStatus==READING)
+        {
             if(mpReadCodeImg==mInterval-1)
             {
-                mpReadCodeImg=0;
-                cout<<"cut"<<endl;
-                if(rgbcode=='G')
+                if(rgbcode=='G' || rgbcode=='B')
                 {
-                    codeCashe[mpReadCodeCNT]=0;
-                }
-                else if(rgbcode=='B')
-                {
-                    codeCashe[mpReadCodeCNT]=1;
+                    mpReadCodeImg=0;
+                    if(rgbcode=='G')
+                        codeCashe[mpReadCodeCNT]=0;
+                    else if(rgbcode=='B')
+                        codeCashe[mpReadCodeCNT]=1;
+                    
+                    mpReadCodeCNT++;
+                    if(mpReadCodeCNT==codeLength)//读取完成
+                    {
+                        int mcodeID=0;
+                        for (size_t i = 0; i < codeLength; i++)
+                        {
+                            mcodeID+=codeCashe[i]*pow(2,i);
+                        }
+                        int readIDc=getcodeID();
+                        if(mcodeID==readIDc)//ID编码校验成功
+                        {
+                            codeStatus=FINISH;
+                            rgtbStatus='S';
+                            setStatus(OK);
+                            mpReadCodeCNT=0;
+                        }
+                        else
+                        {
+                            setStatus(SUSPECTED_LOST);
+                            codeStatus=FINISH;
+                            rgtbStatus='S';
+                            mpReadCodeCNT=0;
+                            cout<<"SUSPECTED_LOST: codeID cant match!"<<mcodeID<<endl;
+                        }
+                        
+                        
+                        
+                    }
                 }
                 else
                 {
-                    cout<<"error:PREPARE:读取code错误 错误字节："<<mpReadCodeCNT<<endl;;
-                    codeCashe[mpReadCodeCNT]=-9999;
+                    setStatus(SUSPECTED_LOST);
+                    cout<<"SUSPECTED_LOST: READING，NO'G' 'B'"<<endl;
                 }
-                mpReadCodeCNT++;
-                if(mpReadCodeCNT==codeLength)//读取完成
-                {
-                    mutexLock();
-                    codeID=0;
-                    for (size_t i = 0; i < codeLength; i++)
-                    {
-                        codeID+=codeCashe[i]*pow(2,i);
-                    }
-                    mutexUnLock();
-                    codeStatus=FINISH;
-                    rgtbStatus='S';
-                    setStatus(OK);
-                    mpReadCodeCNT=0;
-                }
+                
             }
             else if(mpReadCodeImg<mInterval-1)
                 mpReadCodeImg++;
         }
-        else
-        {
-            setStatus(LOSTING);
-        }
-        
-
-
-    }
-    else if(getStatus()==OK)
-    {
-        char rgbcode;
-        //S1：对BlockImg进行hsv识别+轮廓点检测
-        vector<Point2f> r_center,g_center,b_center;
-        vector<double> SS;
-        findContourCenterRGB(BlockImg,r_center,g_center,b_center,SS);
-        //S2：找出轮廓点里与中心点最接近的点，计算出移动向量，
-        //并且得到该轮廓点是RG还是B（若每找到先退出，下一帧一定能找到）
-        double Sarea_avg;
-        Vec2f minvec;
-        rgbcode=findminVecRGB(r_center,g_center,b_center,SS,minvec,Sarea_avg);
-        //cout<<"OKStatus  rgbcode:"<<rgbcode<<endl;
-    
-        //S3：根据移动向量更新rect
-        //更新跟踪块大小(根据轮廓面积)
-        Rect cRect;
-        cRect.width=rect.width;
-        cRect.height=rect.height;
-        mutexLock();
-        ledCenter.x+=minvec[0];
-        ledCenter.y+=minvec[1];
-        cRect.x=ledCenter.x-(rect.width/2);
-        cRect.y=ledCenter.y-(rect.height/2);
-        mutexUnLock();
-
-         if(setTrackRect(cRect))//看是否越界
-        {
-            if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
-            {
-                if(rgtbStatus=='S' && rgbcode=='R') rgtbStatus='R';
-                else if(rgtbStatus=='R' && rgbcode=='G')
-                {
-                    rgtbStatus='G';
-                    codeStatus=READING;
-                    //cout<<"FINISH->READING"<<endl;
-                    mpReadCodeImg=mpReadCodeImg_fp;//隔一帧再开始读，保障不读到边缘值
-                    mpReadCodeCNT=0;
-                }
-                else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
-                {
-                    setStatus(SUSPECTED_LOST);
-                    cout<<"SUSPECTED_LOST: FINISH, NO RGB"<<endl;
-                }
-            }
-            else if(codeStatus==READING)
-            {
-                if(mpReadCodeImg==mInterval-1)
-                {
-                    if(rgbcode=='G' || rgbcode=='B')
-                    {
-                        mpReadCodeImg=0;
-                        if(rgbcode=='G')
-                            codeCashe[mpReadCodeCNT]=0;
-                        else if(rgbcode=='B')
-                            codeCashe[mpReadCodeCNT]=1;
-                        
-                        mpReadCodeCNT++;
-                        if(mpReadCodeCNT==codeLength)//读取完成
-                        {
-                            int mcodeID=0;
-                            for (size_t i = 0; i < codeLength; i++)
-                            {
-                                mcodeID+=codeCashe[i]*pow(2,i);
-                            }
-                            int readIDc=getcodeID();
-                            if(mcodeID==readIDc)//ID编码校验成功
-                            {
-                                codeStatus=FINISH;
-                                rgtbStatus='S';
-                                setStatus(OK);
-                                mpReadCodeCNT=0;
-                            }
-                            else
-                            {
-                                setStatus(SUSPECTED_LOST);
-                                codeStatus=FINISH;
-                                rgtbStatus='S';
-                                mpReadCodeCNT=0;
-                                cout<<"SUSPECTED_LOST: codeID cant match!"<<mcodeID<<endl;
-                            }
-                            
-                            
-                            
-                        }
-                    }
-                    else
-                    {
-                        setStatus(SUSPECTED_LOST);
-                        cout<<"SUSPECTED_LOST: READING，NO'G' 'B'"<<endl;
-                    }
-                    
-                }
-                else if(mpReadCodeImg<mInterval-1)
-                    mpReadCodeImg++;
-            }
-        }
-        else
-            setStatus(LOSTING);
-
     }
     else if(getStatus()==SUSPECTED_LOST)
     {
-        char rgbcode;
-       //S1：对BlockImg进行hsv识别+轮廓点检测
-        vector<Point2f> r_center,g_center,b_center;
-        vector<double> SS;
-        findContourCenterRGB(BlockImg,r_center,g_center,b_center,SS);
-        //S2：找出轮廓点里与中心点最接近的点，计算出移动向量，
-        //并且得到该轮廓点是RG还是B（若每找到先退出，下一帧一定能找到）
-        double Sarea_avg;
-        Vec2f minvec;
-        rgbcode=findminVecRGB(r_center,g_center,b_center,SS,minvec,Sarea_avg);
-        cout<<"SUSPECTED_LOST  rgbcode:"<<rgbcode<<endl;
-    
-        //S3：根据移动向量更新rect
-        //更新跟踪块大小(根据轮廓面积)
-        Rect cRect;
-        cRect.width=rect.width;
-        cRect.height=rect.height;
-        mutexLock();
-        ledCenter.x+=minvec[0];
-        ledCenter.y+=minvec[1];
-        cRect.x=ledCenter.x-(rect.width/2);
-        cRect.y=ledCenter.y-(rect.height/2);
-        mutexUnLock();
-
-        if(setTrackRect(cRect))//看是否越界
+        if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
         {
-            if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
+            if(rgtbStatus=='S' && rgbcode=='R')
+            {   
+                rgtbStatus='R';
+                setStatus(OK);
+            }
+            else if(rgtbStatus=='R' && rgbcode=='G')
             {
-                if(rgtbStatus=='S' && rgbcode=='R')
-                {   
-                    rgtbStatus='R';
-                    setStatus(OK);
-                }
-                else if(rgtbStatus=='R' && rgbcode=='G')
+                rgtbStatus='G';
+                codeStatus=READING;
+                cout<<"FINISH->READING"<<endl;
+                mpReadCodeImg=mpReadCodeImg_fp;
+                mpReadCodeCNT=0;
+                setStatus(OK);
+            }
+            else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
+            {
+                setStatus(LOSTING);
+                rgtbStatus=NULL;
+                cout<<"LOST:FINISH ;NO RGB"<<endl;
+            }
+        }
+        else if(codeStatus==READING)
+        {
+            if(mpReadCodeImg==mInterval-1)
+            {
+                if(rgbcode=='G' || rgbcode=='B')
                 {
-                    rgtbStatus='G';
-                    codeStatus=READING;
-                    cout<<"FINISH->READING"<<endl;
-                    mpReadCodeImg=mpReadCodeImg_fp;
-                    mpReadCodeCNT=0;
+                    mpReadCodeImg=0;
                     setStatus(OK);
+                    if(rgbcode=='G')
+                    {
+                        codeCashe[mpReadCodeCNT]=0;
+                    }
+                    else if(rgbcode=='B')
+                    {
+                        codeCashe[mpReadCodeCNT]=1;
+                    }
+                    
+                    mpReadCodeCNT++;
+                    if(mpReadCodeCNT==codeLength)//读取完成
+                    {
+                        int mcodeID=0;
+                        for (size_t i = 0; i < codeLength; i++)
+                        {
+                            mcodeID+=codeCashe[i]*pow(2,i);
+                        }
+                        int readIDc=getcodeID();
+                        if(mcodeID==readIDc)//ID编码校验成功
+                        {
+                            codeStatus=FINISH;
+                            rgtbStatus='S';
+                            setStatus(OK);
+                            mpReadCodeCNT=0;
+                            mpReadCodeImg=0;
+                        }
+                        else
+                        {
+                            setStatus(LOSTING);
+                            cout<<"LOST: codeID cant match!"<<endl;
+                        }
+                        
+                    }
                 }
-                else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
+                else
                 {
                     setStatus(LOSTING);
                     rgtbStatus=NULL;
-                    cout<<"LOST:FINISH ;NO RGB"<<endl;
+                    cout<<"LOST :READING ;NO'G' 'B'"<<endl;
                 }
+                
             }
-            else if(codeStatus==READING)
+            else if(mpReadCodeImg<mInterval-1)
             {
-                if(mpReadCodeImg==mInterval-1)
-                {
-                    if(rgbcode=='G' || rgbcode=='B')
-                    {
-                        mpReadCodeImg=0;
-                        setStatus(OK);
-                        if(rgbcode=='G')
-                        {
-                            codeCashe[mpReadCodeCNT]=0;
-                        }
-                        else if(rgbcode=='B')
-                        {
-                            codeCashe[mpReadCodeCNT]=1;
-                        }
-                        
-                        mpReadCodeCNT++;
-                        if(mpReadCodeCNT==codeLength)//读取完成
-                        {
-                            int mcodeID=0;
-                            for (size_t i = 0; i < codeLength; i++)
-                            {
-                                mcodeID+=codeCashe[i]*pow(2,i);
-                            }
-                            int readIDc=getcodeID();
-                            if(mcodeID==readIDc)//ID编码校验成功
-                            {
-                                codeStatus=FINISH;
-                                rgtbStatus='S';
-                                setStatus(OK);
-                                mpReadCodeCNT=0;
-                                mpReadCodeImg=0;
-                            }
-                            else
-                            {
-                                setStatus(LOSTING);
-                                cout<<"LOST: codeID cant match!"<<endl;
-                            }
-                            
-                        }
-                    }
-                    else
-                    {
-                        setStatus(LOSTING);
-                        rgtbStatus=NULL;
-                        cout<<"LOST :READING ;NO'G' 'B'"<<endl;
-                    }
-                    
-                }
-                else if(mpReadCodeImg<mInterval-1)
-                {
-                    if(rgbcode=='G' || rgbcode=='B')setStatus(OK);
-                    mpReadCodeImg++;
-                }
+                if(rgbcode=='G' || rgbcode=='B')setStatus(OK);
+                mpReadCodeImg++;
             }
         }
-        else
-            setStatus(LOSTING);
-
     }
     else if(getStatus()==LOSTING)
     {
@@ -405,6 +309,41 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
 
     BlockImg_pre=BlockImg_last.clone();
     BlockImg_last=BlockImg.clone();
+}
+
+bool TrackBlock::Kalmanfilter(Mat srcinput,char& rgbcode)
+{
+    BlockImg=srcinput(rect);
+    //S1：对BlockImg进行hsv识别+轮廓点检测
+    vector<Point2f> r_center,g_center,b_center;
+    vector<double> SS;
+    findContourCenterRGB(BlockImg,r_center,g_center,b_center,SS);
+    //S2：找出轮廓点里与中心点最接近的点，计算出移动向量，
+    //并且得到该轮廓点是RG还是B（若每找到先退出，下一帧一定能找到）
+    double Sarea_avg;
+    Vec2f minvec;
+    rgbcode=findminVecRGB(r_center,g_center,b_center,SS,minvec,Sarea_avg);
+    //cout<<"rgbcode:"<<rgbcode<<endl;
+    //S3：根据移动向量更新rect
+    //更新跟踪块大小(根据轮廓面积)
+    Rect cRect;
+    cRect.width=rect.width;
+    cRect.height=rect.height;
+    mutexLock();
+    ledCenter.x+=minvec[0];
+    ledCenter.y+=minvec[1];
+    cRect.x=ledCenter.x-(rect.width/2);
+    cRect.y=ledCenter.y-(rect.height/2);
+    mutexUnLock();
+
+    if(setTrackRect(cRect))//看是否越界
+        return true;
+    else{
+        setStatus(LOSTING);
+        rgtbStatus=NULL;
+        return false;
+    }
+
 }
 
 
