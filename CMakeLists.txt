@@ -1,14 +1,17 @@
 cmake_minimum_required(VERSION 2.8)
 project(RGBLED_POSITION)
 
+# 添加cmake模块以使用g2o
+list( APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules )
+
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   -Wall  -O3 -march=native ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall   -O3 -march=native ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   -Wall  -O3  ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -Wall   -O3 ")
 
 # Check C++11 or C++0x support
 include(CheckCXXCompilerFlag)
@@ -36,11 +39,15 @@ if(NOT OpenCV_FOUND)
    endif()
 endif()
 
+find_package(Eigen3  REQUIRED)
+find_package(G2O REQUIRED )
 
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
+${EIGEN3_INCLUDE_DIR}
+${G2O_INCLUDE_DIRS}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -50,10 +57,14 @@ src/TrackBlock.cpp
 src/System.cpp
 src/ScanRelocate.cpp
 src/Cluster.cpp
+src/GeomeOperation.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
+${EIGEN3_LIBS}
+${G2O_LIBS}
+g2o_core g2o_stuff g2o_types_sba g2o_types_slam2d
 )
 
 # Build examples
@@ -66,4 +77,8 @@ target_link_libraries(testRGBTrack ${OpenCV_LIBS})
 add_executable(testSys
 test/testSys.cpp)
 target_link_libraries(testSys ${PROJECT_NAME})
+
+add_executable(testgeome
+test/testgeome.cpp)
+target_link_libraries(testgeome ${PROJECT_NAME})
 
