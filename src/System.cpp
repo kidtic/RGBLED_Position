@@ -153,6 +153,7 @@ void System::drawObject(Mat& frameInput,System::drawType t)
     if(t==CIRCLE){
         for (size_t i = 0; i < mTrackBlocks.size(); i++)
         {
+            if(mTrackBlocks[i].getStatus()==TrackBlock::LOSTING) continue;
             Point2f pc=mTrackBlocks[i].getCenter();
             circle(frameInput,pc,15,Scalar(255,255,0),4);
             //rectangle(frame,ledTrack.mTrackBlocks[i].getTrackRect(),Scalar(255,255,0),1);
@@ -163,6 +164,7 @@ void System::drawObject(Mat& frameInput,System::drawType t)
     else if(t==BLOCK){
         for (size_t i = 0; i < mTrackBlocks.size(); i++)
         {
+            if(mTrackBlocks[i].getStatus()==TrackBlock::LOSTING) continue;
             Point2f pc=mTrackBlocks[i].getCenter();
             //circle(frameInput,pc,15,Scalar(255,255,0),4);
             rectangle(frameInput,mTrackBlocks[i].getTrackRect(),Scalar(255,255,0),1);

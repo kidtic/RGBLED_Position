@@ -38,6 +38,7 @@ private://data
     vector<Point2f> mTBCenter;
     vector<int> mTBID;
     vector<int> mTBStatus;
+    vector<Rect> mTBRect;
 
     //跟踪块参数
     int mTrackBlockWidth;

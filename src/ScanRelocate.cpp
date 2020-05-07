@@ -173,10 +173,9 @@ void ScanRelocate::Run()
 
 void ScanRelocate::updataFromSys()
 {
-    frame=mpSystem->getFrame(0).clone();
-    resize(frame,re_frame,lowSize);
-    
+   
     vector<Point2f> cTBCenter;
+    vector<Rect> cTBRect;
     vector<int> cTBID;
     vector<int> cTBStatus;
     for (size_t i = 0; i < mpSystem->mTrackBlocks.size(); i++)
@@ -184,10 +183,24 @@ void ScanRelocate::updataFromSys()
         cTBCenter.push_back(mpSystem->mTrackBlocks[i].getCenter());
         cTBID.push_back(mpSystem->mTrackBlocks[i].getcodeID());
         cTBStatus.push_back(mpSystem->mTrackBlocks[i].getStatus());
+        cTBRect.push_back(mpSystem->mTrackBlocks[i].getTrackRect());
     }
     mTBCenter=cTBCenter;
     mTBID=cTBID;
     mTBStatus=cTBStatus;
+    mTBRect=cTBRect;
+
+    frame=mpSystem->getFrame(0).clone();
+
+    for(int i=0;i<cTBRect.size();i++){
+        if(cTBStatus[i]!=1){
+            Mat imag = cv::Mat::zeros(cTBRect[i].height,cTBRect[i].width, CV_8UC3);
+            imag.copyTo(frame(cTBRect[i]));
+        }
+        
+    }
+    resize(frame,re_frame,lowSize);
+    //imshow("scan",frame);
     
 }
 
