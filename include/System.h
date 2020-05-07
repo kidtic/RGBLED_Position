@@ -49,6 +49,7 @@ private://data
     //跟踪块参数
     int mTrackBlockWidth;
     int mTrackBlockCodeLen=3;//bit
+    bool fixedWidth=false; //是否采用固定TB大小
 
     //颜色常量
     Scalar lower_blue;
@@ -62,6 +63,7 @@ private://data
 
     //决定mTrackBlockWidth的大小，根据轮廓面积来给出TrackBlockWidth
     double mTrackBlockWidth_Sarea=13;  
+    
 
     //原始图像
     std::mutex mMutexFrame;
@@ -87,13 +89,17 @@ public://data
 public:
     //构造的时候提供第一帧的图像
     //resizek:降低分辨率系数 应大于1
-    System(Mat frame0,double resizek);
+    System(Mat frame0,double resizek,bool fixedw,int tbWidth=40);
     ~System();
 
     //初始化函数
     //注意这个函数需要重复使用，要一直调用到返回值为1未知
     //返回初始化是否完成：0未完成；1已完成；-1初始化失败
     eSysStatus Init(Mat frameInput);
+
+    //初始化函数
+    //输入id号 直接生成TB，不用扫描
+    eSysStatus Init(Mat frameInput,vector<int> ids);
 
     //系统主程序
     void position(Mat frameInput);

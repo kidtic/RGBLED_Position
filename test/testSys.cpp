@@ -49,7 +49,7 @@ int main(int argc, char const *argv[])
 
     Mat frame;
     cap.read(frame);
-    LED_POSITION::System ledTrack(frame,1);
+    LED_POSITION::System ledTrack(frame,1,true,60);
     v4l2_setting_focus(55);//一定要放在cap.read之后。
 
     namedWindow("src",CV_WINDOW_AUTOSIZE);
@@ -58,6 +58,11 @@ int main(int argc, char const *argv[])
     double totaltime;
     int fi=0;
     //主循环
+    vector<int> ids;
+    ids.push_back(1);
+    ids.push_back(4);
+    ids.push_back(5);
+    ledTrack.Init(frame,ids);
     while (cap.read(frame))
     {
         //--------------------主入口

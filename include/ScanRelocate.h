@@ -42,6 +42,7 @@ private://data
 
     //跟踪块参数
     int mTrackBlockWidth;
+    bool fixedWidth;
     int mTrackBlockCodeLen=3;//bit
 
     //颜色常量
@@ -72,7 +73,7 @@ private://data
 
     
 public:
-    ScanRelocate(System *pSys,Mat frame0); 
+    ScanRelocate(System *pSys,Mat frame0,bool fx,int tbw); 
     ~ScanRelocate();
 
     std::vector<TrackBlock> mTrackBlocks;

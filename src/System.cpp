@@ -3,7 +3,7 @@
 namespace LED_POSITION
 {
     
-System::System(Mat frame0,double resizek)
+System::System(Mat frame0,double resizek,bool fixedw,int tbWidth)
 {
     //mpScanRelocater=new ScanRelocate(this);
     lower_blue=Scalar(100-5, 60, 140);
@@ -29,9 +29,12 @@ System::System(Mat frame0,double resizek)
 
      initCntFlag=0;
 
+     fixedWidth=fixedw;
+     mTrackBlockWidth=tbWidth;
+
 
      //初始化重定位线程
-     mpScanRelocater=new ScanRelocate(this,frame0);
+     mpScanRelocater=new ScanRelocate(this,frame0,fixedWidth,mTrackBlockWidth);
      mptScanRelocate = new thread(&LED_POSITION::ScanRelocate::Run, mpScanRelocater);
      
      
@@ -79,7 +82,8 @@ System::eSysStatus System::Init(Mat frameInput)
         }
         Sarea_avg=Sarea_avg/Sarea.size();
         //设计跟踪块大小
-        mTrackBlockWidth=mTrackBlockWidth_Sarea*sqrt(Sarea_avg)*sizek;
+        if(fixedWidth==false)
+            mTrackBlockWidth=mTrackBlockWidth_Sarea*sqrt(Sarea_avg)*sizek;
         //聚类
         mCluster.initdata(contourCenters,2*sqrt(Sarea_avg));
         mCluster.clustering();
@@ -114,6 +118,29 @@ System::eSysStatus System::Init(Mat frameInput)
     re_frame_pre=re_frame_last.clone();
     re_frame_last=re_frame.clone();
     return ret;
+}
+
+System::eSysStatus System::Init(Mat frameInput,vector<int> ids)
+{
+    frame=frameInput;
+    resize(frame,re_frame,lowSize);
+    //创建跟踪块
+    for (size_t i = 0; i < ids.size(); i++)
+    {
+         
+        mTrackBlocks.push_back(TrackBlock(&mMutexTrackBlocks,frame,Point2f(frame.cols/2,frame.rows/2),mTrackBlockWidth,mTrackBlockCodeLen));
+        mTrackBlocks[i].setStatus(TrackBlock::LOSTING);
+        mTrackBlocks[i].setcodeID(ids[i]);
+    
+    }
+    sysStatus=POSITION;
+
+    frame_pre=frame_last.clone();
+    frame_last=frame.clone();
+    re_frame_pre=re_frame_last.clone();
+    re_frame_last=re_frame.clone();
+
+    return POSITION;
 }
 
 void System::position(Mat frameInput)

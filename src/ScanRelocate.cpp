@@ -4,7 +4,7 @@
 namespace LED_POSITION
 {
 
-ScanRelocate::ScanRelocate(System *pSys,Mat frame0)
+ScanRelocate::ScanRelocate(System *pSys,Mat frame0,bool fx,int tbw)
 {
     mpSystem=pSys;
     mTrackBlockCodeLen=mpSystem->getTrackBlockCodeLen();
@@ -35,6 +35,9 @@ ScanRelocate::ScanRelocate(System *pSys,Mat frame0)
     lower_red1=Scalar(0, 60,120);
     upper_red1=Scalar(10, 255,255);
     mScanCntFlag=0;
+
+    fixedWidth=fx;
+    mTrackBlockWidth=tbw;
     
 }
 
@@ -80,7 +83,8 @@ int ScanRelocate::scanFrame()
         }
         Sarea_avg=Sarea_avg/Sarea.size();
         //设计跟踪块大小
-        int mTrackBlockWidth=mTrackBlockWidth_Sarea*sqrt(Sarea_avg)*sizek;
+        if(fixedWidth==false)
+            mTrackBlockWidth=mTrackBlockWidth_Sarea*sqrt(Sarea_avg)*sizek;
         //聚类
         mpSystem->mCluster.initdata(contourCenters,2*sqrt(Sarea_avg));
         mpSystem->mCluster.clustering();
