@@ -113,7 +113,6 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
         if(mpReadCodeImg==mInterval-1)
         {
             mpReadCodeImg=0;
-            cout<<"cut"<<endl;
             if(rgbcode=='G')
             {
                 codeCashe[mpReadCodeCNT]=0;

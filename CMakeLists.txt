@@ -82,3 +82,7 @@ add_executable(testgeome
 test/testgeome.cpp)
 target_link_libraries(testgeome ${PROJECT_NAME})
 
+add_executable(datasave
+test/datasave.cpp)
+target_link_libraries(datasave ${PROJECT_NAME})
+

@@ -269,6 +269,22 @@ Size System::getLowSize()
 {
     return lowSize;
 }
+
+vector<pair<int,Point2f>> System::getLEDPoint()
+{
+    vector<pair<int,Point2f>> ret;
+    for(auto e:mTrackBlocks){
+        if(e.getStatus()==TrackBlock::OK || e.getStatus()==TrackBlock::SUSPECTED_LOST){
+            pair<int,Point2f> in;
+            in.first=e.getcodeID();
+            in.second=e.getCenter();
+            ret.push_back(in);
+        }
+    }
+    return ret;
+}
+
+
 Mat System::getFrame(int times)
 {
      unique_lock<mutex> lock(mMutexFrame);
