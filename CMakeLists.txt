@@ -58,6 +58,7 @@ src/System.cpp
 src/ScanRelocate.cpp
 src/Cluster.cpp
 src/GeomeOperation.cpp
+src/RobotPosition.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -70,9 +71,6 @@ g2o_core g2o_stuff g2o_types_sba g2o_types_slam2d
 # Build examples
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 
-add_executable(testRGBTrack
-test/testRGBTrack.cpp)
-target_link_libraries(testRGBTrack ${OpenCV_LIBS})
 
 add_executable(testSys
 test/testSys.cpp)
@@ -85,4 +83,8 @@ target_link_libraries(testgeome ${PROJECT_NAME})
 add_executable(datasave
 test/datasave.cpp)
 target_link_libraries(datasave ${PROJECT_NAME})
+
+add_executable(setworld
+test/setworld.cpp)
+target_link_libraries(setworld ${PROJECT_NAME})
 

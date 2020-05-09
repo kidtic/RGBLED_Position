@@ -87,8 +87,14 @@ public://data
 
 
 public:
-    //构造的时候提供第一帧的图像
-    //resizek:降低分辨率系数 应大于1
+
+    /*
+    *@brief：构造的时候提供第一帧的图像
+    *@param:frame0:提供第一帧图像
+            resizek:提供缩放比
+            fixedw:是否固定跟踪框大小
+            tbWidth:跟踪块大小 
+    */
     System(Mat frame0,double resizek,bool fixedw,int tbWidth=40);
     ~System();
 
