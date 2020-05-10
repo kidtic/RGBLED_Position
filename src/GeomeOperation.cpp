@@ -89,4 +89,13 @@ g2o::SE2 geomeopera::estimpose(vector<Eigen::Vector2d> z,vector<Eigen::Vector2d>
 	
 }
 
+geomeopera::geomeopera(/* args */)
+{
+
+}
+
+geomeopera::~geomeopera()
+{
+}
+
 }//name

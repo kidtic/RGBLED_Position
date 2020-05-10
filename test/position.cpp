@@ -1,4 +1,4 @@
-#include "System.h"
+#include "RobotPosition.h"
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/highgui.hpp"
@@ -10,15 +10,13 @@
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
 
-using namespace cv;
-using namespace std;
 
 void v4l2_setting_focus(int val);
 void v4l2_setting_fps(int val);
 
 int main(int argc, char const *argv[])
 {
-    VideoCapture cap;
+     VideoCapture cap;
     cout<<argc<<argv[0]<<endl;
     if(argc==2 && string(argv[1])=="rtsp"){
         string rtspstr="rtsp://admin:zou133zzq@192.168.123.110:554/cam/realmonitor?channel=1&amp;subtype=0&amp;unicast=true&amp;proto=Onvif";
@@ -52,7 +50,7 @@ int main(int argc, char const *argv[])
 
     Mat frame;
     cap.read(frame);
-    LED_POSITION::System ledTrack(frame,1,true,60);
+    LED_POSITION::RobotPosition robot(frame,"config/camPosi_cfg.json");
     v4l2_setting_focus(60);//一定要放在cap.read之后。
     v4l2_setting_fps(25);
 
@@ -61,33 +59,23 @@ int main(int argc, char const *argv[])
     time_t start,stop;
     double totaltime;
     int fi=0;
-    //主循环
-    vector<int> ids;
-    ids.push_back(1);
-    ids.push_back(4);
-    ids.push_back(5);
-    ledTrack.Init(frame,ids);
-    while (cap.read(frame))
+    //addrobot
+    map<int,Eigen::Vector3d> ledmap;
+    ledmap[1]=Eigen::Vector3d(0.1579,0.01995,0.385);
+    ledmap[4]=Eigen::Vector3d(-0.08532,0.13435,0.385);
+    ledmap[5]=Eigen::Vector3d(-0.08532,-0.13435,0.385);
+    robot.addrobot(1,ledmap);
+    robot.Init(frame);
+    while(cap.read(frame))
     {
-        //--------------------主入口
-        ledTrack.run(frame);
-        
-        //----------------画图
-        ledTrack.drawObject(frame,LED_POSITION::System::BLOCK);
+        robot.position(frame);
 
-        printf("FPS:%ld ms\n",(getTickCount()-start)/1000000);  
-        start=getTickCount();
-
-
-        Mat resizeimg;
-        resize(frame,resizeimg,Size(1280,720));
-        imshow("src",resizeimg);
-        int key=waitKey(1);
-        if(key=='q') break;
-        
-        
-        
     }
+
+
+
+
+    return 0;
 }
 
 

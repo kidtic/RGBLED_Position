@@ -8,8 +8,8 @@ System::System(Mat frame0,double resizek,bool fixedw,int tbWidth)
     //mpScanRelocater=new ScanRelocate(this);
     lower_blue=Scalar(100-5, 60, 140);
      upper_blue=Scalar(125+5, 255,255);
-     lower_green=Scalar(35-5, 60,140);
-     upper_green=Scalar(77+5, 255,255);
+     lower_green=Scalar(35-10, 60,140);
+     upper_green=Scalar(77+10, 255,255);
      
      lower_red0=Scalar(156, 60,120);
      upper_red0=Scalar(180, 255,255);
@@ -270,15 +270,12 @@ Size System::getLowSize()
     return lowSize;
 }
 
-vector<pair<int,Point2f>> System::getLEDPoint()
+map<int,Point2f> System::getLEDPoint()
 {
-    vector<pair<int,Point2f>> ret;
+    map<int,Point2f> ret;
     for(auto e:mTrackBlocks){
         if(e.getStatus()==TrackBlock::OK || e.getStatus()==TrackBlock::SUSPECTED_LOST){
-            pair<int,Point2f> in;
-            in.first=e.getcodeID();
-            in.second=e.getCenter();
-            ret.push_back(in);
+            ret[e.getcodeID()]=e.getCenter();
         }
     }
     return ret;

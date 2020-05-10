@@ -52,38 +52,21 @@ int main(int argc, char const *argv[])
 
     Mat frame;
     cap.read(frame);
-    LED_POSITION::System ledTrack(frame,1,true,60);
     v4l2_setting_focus(60);//一定要放在cap.read之后。
     v4l2_setting_fps(25);
-
     namedWindow("src",CV_WINDOW_AUTOSIZE);
-    //时间记录
-    time_t start,stop;
-    double totaltime;
-    int fi=0;
-    //主循环
-    vector<int> ids;
-    ids.push_back(1);
-    ids.push_back(4);
-    ids.push_back(5);
-    ledTrack.Init(frame,ids);
+    int savecnt=0;
+    
     while (cap.read(frame))
     {
-        //--------------------主入口
-        ledTrack.run(frame);
-        
-        //----------------画图
-        ledTrack.drawObject(frame,LED_POSITION::System::BLOCK);
-
-        printf("FPS:%ld ms\n",(getTickCount()-start)/1000000);  
-        start=getTickCount();
-
-
-        Mat resizeimg;
-        resize(frame,resizeimg,Size(1280,720));
-        imshow("src",resizeimg);
+       
+        imshow("src",frame);
         int key=waitKey(1);
         if(key=='q') break;
+        else if(key=='s'){
+            imwrite("res/ANCcam_1080p/anccam_"+to_string(savecnt)+".jpg",frame);
+            savecnt++;
+        }
         
         
         

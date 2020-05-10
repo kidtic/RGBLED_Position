@@ -83,10 +83,10 @@ int main(int argc, char const *argv[])
         //save    
         cnt++;
         if(cnt>=5){
-            vector<pair<int,Point2f>> pdata=ledTrack.getLEDPoint();
+            map<int,Point2f> pdata=ledTrack.getLEDPoint();
             if(pdata.size()!=0){
-                dataout<<to_string(savecnt)+" "<<to_string((int)pdata[0].second.x)+" "<<
-                    to_string((int)pdata[0].second.y)<<endl;
+                dataout<<to_string(savecnt)+" "<<to_string(pdata.begin()->second.x)+" "<<
+                    to_string(pdata.begin()->second.y)<<endl;
                 imwrite("savedata/img/"+to_string(savecnt)+".jpg",frame);
                 savecnt++;
             

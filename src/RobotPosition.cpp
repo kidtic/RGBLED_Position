@@ -12,8 +12,24 @@ RobotPosition::RobotPosition(Mat img,string cfgpath)
     //load cfg
     loadCameraConfig();
     cout<<"strat:"<<cam_T<<endl;
+    
+    
+    
 
 
+
+}
+
+void RobotPosition::Init(Mat img)
+{
+    //ledtracker init
+    vector<int> ids;
+    for(auto bot:robots){
+        for(auto e:bot.leds){
+            ids.push_back(e.first);
+        }
+    } 
+    pLEDtracker->Init(img,ids);
 }
 
 
@@ -80,7 +96,7 @@ bool RobotPosition::setWorld(Mat inputimg, int flag)
     
 void RobotPosition::saveCameraConfig()
 {
-    FileStorage cfgfile(cfg,FileStorage::APPEND);
+    FileStorage cfgfile(cfg,FileStorage::WRITE);
 
     Mat r,t;
     eigen2cv(cam_T.rotation().matrix(),r);
@@ -89,6 +105,7 @@ void RobotPosition::saveCameraConfig()
     cfgfile.write("cam_diff",cam_diff);
     cfgfile.write("cam_r",r);
     cfgfile.write("cam_t",t);
+
     
     cfgfile.release();
 }
@@ -112,6 +129,62 @@ void RobotPosition::loadCameraConfig()
     cfgfile["cam_diff"]>>cam_diff;
 
     cfgfile.release();
+}
+
+void RobotPosition::addrobot(int id,map<int,Eigen::Vector3d> led)
+{
+    robotInfo in;
+    in.id=id;
+    in.leds=led;
+    in.pose=Eigen::Vector3d(0,0,0);
+    robots.push_back(in);
+}
+
+
+
+bool RobotPosition::position(Mat inputimg)
+{
+    //led跟踪
+    pLEDtracker->run(inputimg);
+    map<int,cv::Point2f> leduv = pLEDtracker->getLEDPoint();
+    //对每个机器人解析led
+    for(int i=0;i<robots.size();i++){
+        vector<Eigen::Vector2d> z;
+        vector<Eigen::Vector2d> p;
+        for(auto led:robots[i].leds){
+            auto it=leduv.find(led.first);
+            if(it!=leduv.end()){
+                Eigen::Vector2d pi = projectuv2xy(it->second,0.39);
+                z.push_back(led.second.head(2));
+                p.push_back(pi);
+                cout<<led.first<<":( "<<pi[0]<<" , "<<pi[1]<<" )"<<endl;
+            }
+        }
+        if(z.size()>=2){
+            g2o::SE2 newpose = geomeCalculater.estimpose(z,p,g2o::SE2(robots[i].pose));
+            robots[i].pose=newpose.inverse().toVector();
+            cout<<"pose:\n"<<robots[i].pose<<endl;
+        }
+    }
+}
+
+Eigen::Vector2d RobotPosition::projectuv2xy(cv::Point2f uv,float h)
+{
+    Eigen::Matrix3d r=cam_T.rotation().matrix();
+    Eigen::Vector3d t=cam_T.translation();
+    Eigen::Matrix3d m;
+    cv2eigen(cam_M,m);
+    Eigen::Matrix3d k;
+    k<<r(0,0),r(0,1),r(0,2)*h+t[0],
+       r(1,0),r(1,1),r(1,2)*h+t[1],
+       r(2,0),r(2,1),r(2,2)*h+t[2];
+    Eigen::Vector3d u=(m*k).inverse()*Eigen::Vector3d(uv.x,uv.y,1);
+    return Eigen::Vector2d(u[0]/u[2],u[1]/u[2]);
+  
+
+
+   
+    
 }
 
 

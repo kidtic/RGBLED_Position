@@ -59,7 +59,7 @@ def calibrateCamera9x6(jpgfilepath,cfgsavepath,ChessSize=25):
 
 if __name__ == "__main__":
 
-    err=calibrateCamera9x6('res/redmicap_1080p','res/redmicameraMTX.json')
+    err=calibrateCamera9x6('res/ANCcam_1080p','res/anccameraMTX.json')
     print("total_error:",err)
 
     # 去畸变

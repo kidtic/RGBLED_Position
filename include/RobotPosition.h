@@ -12,6 +12,7 @@
 
 #include <g2o/types/slam2d/edge_se2.h>
 #include <g2o/types/sba/types_six_dof_expmap.h>
+#include "GeomeOperation.h"
 
 using namespace cv;
 
@@ -20,7 +21,7 @@ namespace LED_POSITION
 {
 #define WORLD_ARTAG 0
 #define WORLD_LED 1
-
+class geomeopera;
 //一个RobotPosition代表了一个相机 捕获多个机器人
 class RobotPosition
 {
@@ -29,13 +30,17 @@ public:
     {
         int id;
         //key为其ID。对应了在机器人坐标系的位置
-        std::map<int,Eigen::Vector3d> led;
+        std::map<int,Eigen::Vector3d> leds;
+        //position 后坐标(x,y,theta)
+        Eigen::Vector3d pose;
     };
     
 
 private:
     //ledtracker
     LED_POSITION::System* pLEDtracker;
+    //cu
+    LED_POSITION::geomeopera geomeCalculater;
 
     //config file
     string cfg;
@@ -49,6 +54,9 @@ private:
     uint8_t worldAR_ID=11;         //world artag id
 	float worldAR_size= 0.1745;	   //artag real size(m)
 
+    //机器人数量以及其信息
+    vector<robotInfo> robots;
+
 
 
 public:
@@ -58,6 +66,8 @@ public:
     */
     RobotPosition(Mat img,string cfgpath);
     ~RobotPosition();
+
+    void Init(Mat img);
 
     /*
     * @brief：识别世界坐标系并且imshow出来，但是不会set
@@ -78,6 +88,28 @@ public:
     */
     void saveCameraConfig();
     void loadCameraConfig();
+
+    /*
+    * @brief：添加机器人信息
+    * @param：id:机器人的ID号
+    *         led：led定位器的编号与坐标
+    */
+   void addrobot(int id,map<int,Eigen::Vector3d> led);
+
+    /*
+    * @brief：定位，提供一张照片，返回机器人位姿(二维),由于采用led跟踪，
+    *       所以position需要按照帧率严格的连续调用。
+    * @param：inputimg：输入图片
+    *         
+    */
+    bool position(Mat inputimg);
+
+     /*
+    * @brief：对于定高的机器人来说，只需要给其led的像素坐标即可求出空间xy坐标
+    * @param：uv 像素坐标
+    *         h，对应的led点的高
+    */
+    Eigen::Vector2d projectuv2xy(cv::Point2f uv,float h);
 };
 
 

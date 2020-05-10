@@ -99,14 +99,7 @@ public:
 
 
 
-geomeopera::geomeopera(/* args */)
-{
 
-}
-
-geomeopera::~geomeopera()
-{
-}
 
 
 

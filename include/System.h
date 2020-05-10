@@ -8,6 +8,7 @@
 #include<vector>
 #include<Cluster.h>
 #include <mutex>
+#include <map>
 
 using namespace std;
 
@@ -131,8 +132,9 @@ public:
     double getTrackBlockWidth_Sarea();
     int getTrackBlockCodeLen();
     Size getLowSize();
+
     //返回led中心点，只返回ok与sub状态的点
-    vector<pair<int,Point2f>> getLEDPoint();
+    map<int,Point2f> getLEDPoint();
 
     //需要互斥锁
     //返回图像 times=0 表示当前帧

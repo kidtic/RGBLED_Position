@@ -88,3 +88,13 @@ add_executable(setworld
 test/setworld.cpp)
 target_link_libraries(setworld ${PROJECT_NAME})
 
+add_executable(savepic
+test/savepic.cpp)
+target_link_libraries(savepic ${PROJECT_NAME})
+
+add_executable(position
+test/position.cpp)
+target_link_libraries(position ${PROJECT_NAME})
+
+
+
