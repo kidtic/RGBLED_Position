@@ -80,7 +80,7 @@ g2o::SE2 geomeopera::estimpose(vector<Eigen::Vector2d> z,vector<Eigen::Vector2d>
 	}
 	
 	optimizer.initializeOptimization();
-    optimizer.optimize(5);
+    optimizer.optimize(20);
 	
 	return v->estimate();
 

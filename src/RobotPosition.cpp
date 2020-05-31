@@ -1,12 +1,13 @@
 #include <RobotPosition.h>
 #include <opencv2/core/eigen.hpp>
+#include <algorithm>
 
 namespace LED_POSITION
 {
 
 RobotPosition::RobotPosition(Mat img,string cfgpath)
 {
-    pLEDtracker=new System(img,1,true);
+    pLEDtracker=new System(img,1,true,80);
     cfg=cfgpath;
     
     //load cfg
@@ -157,13 +158,14 @@ bool RobotPosition::position(Mat inputimg)
                 Eigen::Vector2d pi = projectuv2xy(it->second,0.39);
                 z.push_back(led.second.head(2));
                 p.push_back(pi);
-                cout<<led.first<<":( "<<pi[0]<<" , "<<pi[1]<<" )"<<endl;
+                //cout<<led.first<<":( "<<pi[0]<<" , "<<pi[1]<<" )"<<endl;
             }
         }
         if(z.size()>=2){
-            g2o::SE2 newpose = geomeCalculater.estimpose(z,p,g2o::SE2(robots[i].pose));
+            g2o::SE2 pose0(0,0,0);
+            g2o::SE2 newpose = geomeCalculater.estimpose(z,p,pose0);
             robots[i].pose=newpose.inverse().toVector();
-            cout<<"pose:\n"<<robots[i].pose<<endl;
+            //cout<<"pose:\n"<<robots[i].pose<<endl;
         }
     }
 }
@@ -186,6 +188,34 @@ Eigen::Vector2d RobotPosition::projectuv2xy(cv::Point2f uv,float h)
    
     
 }
+
+void RobotPosition::getRobotPose(int id,Eigen::Vector3d &p, Eigen::Quaterniond &q)
+{
+    for(int i=0;i<robots.size();i++){
+        if(robots[i].id==id){
+            p=Eigen::Vector3d(robots[i].pose[0],robots[i].pose[1],0);
+            Eigen::Quaterniond drpyQ;//两帧的旋转欧拉角
+            drpyQ = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX()) * 
+                    Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY()) * 
+                    Eigen::AngleAxisd(robots[i].pose[2], Eigen::Vector3d::UnitZ());
+            q=drpyQ;
+  
+        }
+    }
+    
+}
+void RobotPosition::getRobotPose(int id,Eigen::Vector3d &p, Eigen::Vector3d &rpy)
+{
+    for(int i=0;i<robots.size();i++){
+        if(robots[i].id==id){
+            p=Eigen::Vector3d(robots[i].pose[0],robots[i].pose[1],0);
+            rpy=Eigen::Vector3d(0,0,robots[i].pose[2]);
+        
+        }
+    }
+}
+
+
 
 
 

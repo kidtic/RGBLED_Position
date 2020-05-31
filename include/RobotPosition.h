@@ -35,10 +35,10 @@ public:
         Eigen::Vector3d pose;
     };
     
-
-private:
     //ledtracker
     LED_POSITION::System* pLEDtracker;
+private:
+    
     //cu
     LED_POSITION::geomeopera geomeCalculater;
 
@@ -104,12 +104,24 @@ public:
     */
     bool position(Mat inputimg);
 
-     /*
+    /*
     * @brief：对于定高的机器人来说，只需要给其led的像素坐标即可求出空间xy坐标
     * @param：uv 像素坐标
     *         h，对应的led点的高
     */
     Eigen::Vector2d projectuv2xy(cv::Point2f uv,float h);
+
+    /*
+    * @brief：获取id号的机器人的位姿 
+    * @param：id robot id
+    *         p: robot's position
+    *         q: robot's quater
+    */
+    void getRobotPose(int id,Eigen::Vector3d &p, Eigen::Quaterniond &q);
+    void getRobotPose(int id,Eigen::Vector3d &p, Eigen::Vector3d &rpy);
+
+
+
 };
 
 
