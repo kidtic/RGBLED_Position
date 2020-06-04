@@ -57,6 +57,7 @@ protected://data
 
     //此时的跟踪状态
     eTrackStatus TrackStatus;
+    int IDNoMatchNUM=0;//如果多次检查ID有错误，则直接丢失
     //std::mutex mMutexTrackStatus;
 
 

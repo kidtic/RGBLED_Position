@@ -187,6 +187,7 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
                         int readIDc=getcodeID();
                         if(mcodeID==readIDc)//ID编码校验成功
                         {
+                            IDNoMatchNUM=0;
                             codeStatus=FINISH;
                             rgtbStatus='S';
                             setStatus(OK);
@@ -194,11 +195,20 @@ TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
                         }
                         else
                         {
-                            setStatus(SUSPECTED_LOST);
-                            codeStatus=FINISH;
-                            rgtbStatus='S';
-                            mpReadCodeCNT=0;
-                            cout<<"SUSPECTED_LOST: codeID cant match!"<<mcodeID<<endl;
+                            IDNoMatchNUM++;
+                            if(IDNoMatchNUM>2){
+                                setStatus(LOSTING);
+                                rgtbStatus=NULL;
+                                cout<<"LOST :READING ;NO'G' 'B'"<<endl;
+                            }
+                            else{
+                                setStatus(SUSPECTED_LOST);
+                                codeStatus=FINISH;
+                                rgtbStatus='S';
+                                mpReadCodeCNT=0;
+                                cout<<"SUSPECTED_LOST: codeID cant match!"<<mcodeID<<endl;
+                            }
+                            
                         }
                         
                         
