@@ -1,7 +1,7 @@
 .vscode/
 bin/
 build/
-lib/
+lib/*.so
 res/redmicap_1080p
 res/ANCcam_1080p
 savedata/
