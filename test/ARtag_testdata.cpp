@@ -47,8 +47,8 @@ int main(int argc, char const *argv[])
         return -1;
     }
     
-    Mat frame;
-    cap.read(frame);
+    Mat srcframe;
+    cap.read(srcframe);
     v4l2_setting_focus(50);//一定要放在cap.read之后。
 
     namedWindow("src",CV_WINDOW_AUTOSIZE);
@@ -63,8 +63,9 @@ int main(int argc, char const *argv[])
     if(!dataout.is_open()){
         cout<<"savadata file cant open"<<endl;
     }
-    while (cap.read(frame))
+    while (cap.read(srcframe))
     {
+        Mat frame=srcframe.clone();
        map<int,Point2f> pdata=artag_detecte(frame);
 
         Mat resizeimg;
@@ -78,7 +79,12 @@ int main(int argc, char const *argv[])
             if(pdata.size()!=0){
                 dataout<<to_string(savecnt)+" "<<to_string(pdata.begin()->second.x)+" "<<
                     to_string(pdata.begin()->second.y)<<endl;
-                imwrite("savedata/img/"+to_string(savecnt)+".jpg",frame);
+                imwrite("savedata/img/"+to_string(savecnt)+".jpg",srcframe);
+                savecnt++;
+            }
+            else{
+                dataout<<to_string(savecnt)+" "<<"null null"<<endl;
+                imwrite("savedata/img/"+to_string(savecnt)+".jpg",srcframe);
                 savecnt++;
             }
         }

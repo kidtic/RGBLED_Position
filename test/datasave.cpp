@@ -15,6 +15,7 @@ using namespace cv;
 using namespace std;
 
 void v4l2_setting_focus(int val);
+void v4l2_setting_fps(int val);
 
 int main(int argc, char const *argv[])
 {
@@ -33,7 +34,7 @@ int main(int argc, char const *argv[])
         cap.set(cv::CAP_PROP_FRAME_HEIGHT,1080);
         cap.set(cv::CAP_PROP_FRAME_WIDTH,1920);
         //usleep(1000);
-        cap.set(cv::CAP_PROP_FPS,30);
+        cap.set(cv::CAP_PROP_FPS,25);
         //cap.set(cv::CAP_PROP_FOCUS,10);
     }
     else{
@@ -49,7 +50,8 @@ int main(int argc, char const *argv[])
     Mat frame;
     cap.read(frame);
     LED_POSITION::System ledTrack(frame,1,true,60);
-    v4l2_setting_focus(50);//一定要放在cap.read之后。
+    v4l2_setting_focus(62);//一定要放在cap.read之后。
+    v4l2_setting_fps(25);
 
     namedWindow("src",CV_WINDOW_AUTOSIZE);
 
@@ -80,7 +82,8 @@ int main(int argc, char const *argv[])
         int key=waitKey(1);
         if(key=='q') break;
 
-        //save    
+        //save
+        /*    
         cnt++;
         if(cnt>=5){
             map<int,Point2f> pdata=ledTrack.getLEDPoint();
@@ -93,7 +96,24 @@ int main(int argc, char const *argv[])
             }
             cnt=0;
         }
-
+        */
+       if(key=='s'){
+            map<int,Point2f> pdata=ledTrack.getLEDPoint();
+            if(pdata.size()!=0){
+                dataout<<to_string(savecnt)+" "<<to_string(pdata.begin()->second.x)+" "<<
+                    to_string(pdata.begin()->second.y)<<endl;
+                imwrite("savedata/img/"+to_string(savecnt)+".jpg",frame);
+                savecnt++;
+            }
+            else{
+                dataout<<to_string(savecnt)+" "<<"null null"<<endl;
+                imwrite("savedata/img/"+to_string(savecnt)+".jpg",frame);
+                savecnt++;
+            }
+        }
+        else if(key=='q'){
+            break;
+        }
         
         
     }
@@ -128,4 +148,23 @@ void v4l2_setting_focus(int val)
         perror("can't open /dev/video0");
     close(fd);
 
+}
+
+void v4l2_setting_fps(int  val)
+{
+     //查看v4l2,通过v4l2设置属性
+    int fd = open("/dev/video0", O_RDWR);
+    if(fd!=-1){
+        struct v4l2_streamparm Stream_Parm;
+        memset(&Stream_Parm, 0, sizeof(struct v4l2_streamparm));
+        Stream_Parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; 
+
+        Stream_Parm.parm.capture.timeperframe.denominator =val;;
+        Stream_Parm.parm.capture.timeperframe.numerator = 1;
+
+        int ret = ioctl(fd, VIDIOC_S_PARM, &Stream_Parm);
+        if (ret < 0)
+                perror("set fps failed (%d)\n"); 
+    }
+    
 }
