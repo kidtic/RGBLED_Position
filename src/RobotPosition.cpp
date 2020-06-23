@@ -60,6 +60,30 @@ void RobotPosition::drawWorldtoShow(Mat inputimg, int flag)
 
 }
 
+void RobotPosition::drawWorldtoShow(Mat inputimg,vector<Point3f> MarkerPoint,vector<Point2f> imagePoint)
+{
+    Mat drawimg;
+    inputimg.copyTo(drawimg); 
+
+    if(MarkerPoint.size()==imagePoint.size() && imagePoint.size()>=4){
+        Vec3d rvec, tvec;
+        bool ret=cv::solvePnP(MarkerPoint,imagePoint,cam_M,cam_diff,rvec,tvec);
+        if(ret==true){
+            cv::aruco::drawAxis(drawimg, cam_M, cam_diff, rvec, tvec, 1);
+        }
+    }
+    
+    
+    //imagePoint 十字
+    for(int i=0;i<imagePoint.size();i++){
+        cv::circle(drawimg,imagePoint[i],3,Scalar(255,0,0));
+    }
+
+    //显示
+    imshow("drawAxis",drawimg);
+    
+}
+
 bool RobotPosition::setWorld(Mat inputimg, int flag)
 {
     
@@ -93,7 +117,24 @@ bool RobotPosition::setWorld(Mat inputimg, int flag)
         return false;
 
 }
-    
+
+bool RobotPosition::setWorld(vector<Point3f> MarkerPoint,vector<Point2f> imagePoint){
+    Vec3d rvec, tvec;
+    bool ret=cv::solvePnP(MarkerPoint,imagePoint,cam_M,cam_diff,rvec,tvec);
+    if(ret==true){
+        Mat rmat;
+      
+        cv::Rodrigues(rvec, rmat);
+        Eigen::Matrix3d r;
+        cv2eigen(rmat,r);
+        Eigen::Vector3d t;
+        cv2eigen(tvec,t);
+        cam_T=g2o::SE3Quat(r,t);
+        cout<<"cam_T:\n"<<cam_T<<endl;
+        saveCameraConfig();
+    }
+    return ret;
+}
     
 void RobotPosition::saveCameraConfig()
 {

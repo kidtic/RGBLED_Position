@@ -11,8 +11,13 @@
 #include <sys/ioctl.h>
 
 
+//加入自行确定原点xyz轴的要素，使用pnp来求解
+vector<Point3f> objPoint;
+vector<Point2f> imgPoint;
+
 
 void v4l2_setting_focus(int val);
+void on_mouse(int event,int x,int y,int flags,void *ustc);
 
 
 int main(int argc, char const *argv[])
@@ -49,10 +54,19 @@ int main(int argc, char const *argv[])
     cap.read(frame);
     LED_POSITION::RobotPosition robot(frame,"config/camPosi_cfg.json");
     v4l2_setting_focus(50);//一定要放在cap.read之后。
+
+    //鼠标事件
+    cv::namedWindow("drawAxis");
+    cv::setMouseCallback("drawAxis",on_mouse,0);//调用回调函数
+
     
     while(cap.read(frame))
     {
-        robot.drawWorldtoShow(frame);
+        //robot.drawWorldtoShow(frame);
+        //测试用
+
+        robot.drawWorldtoShow(frame,objPoint,imgPoint);
+
         int key=waitKey(10);
         if(key=='s'){
             robot.setWorld(frame);
@@ -60,11 +74,28 @@ int main(int argc, char const *argv[])
         else if(key=='q'){
             break;
         }
+        else if(key=='c'){
+            imgPoint.clear();
+        }
     }
 
     return 0;
 
 }
+
+
+void on_mouse(int event,int x,int y,int flags,void *ustc)//event鼠标事件代号，x,y鼠标坐标，flags拖拽和键盘操作的代号
+{
+    
+    if (event == cv::EVENT_LBUTTONDOWN)//左键按下，读取初始坐标，并在图像上该点处划圆
+    {
+        imgPoint.push_back(Point2f(x,y));
+    }
+    else if(event == cv::EVENT_LBUTTONUP){
+       
+    }
+}
+
 
 
 void v4l2_setting_focus(int val)
