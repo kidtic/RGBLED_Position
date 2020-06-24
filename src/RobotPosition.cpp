@@ -14,8 +14,8 @@ RobotPosition::RobotPosition(Mat img,string cfgpath)
     loadCameraConfig();
     cout<<"strat:"<<cam_T<<endl;
     
-    
-    
+    loadJsonConfig();
+    cout<<"MarkerPoint.size   "<<MarkerPoint.size()<<endl;
 
 
 
@@ -60,7 +60,7 @@ void RobotPosition::drawWorldtoShow(Mat inputimg, int flag)
 
 }
 
-void RobotPosition::drawWorldtoShow(Mat inputimg,vector<Point3f> MarkerPoint,vector<Point2f> imagePoint)
+void RobotPosition::drawWorldtoShow(Mat inputimg,vector<Point2f> imagePoint)
 {
     Mat drawimg;
     inputimg.copyTo(drawimg); 
@@ -76,7 +76,7 @@ void RobotPosition::drawWorldtoShow(Mat inputimg,vector<Point3f> MarkerPoint,vec
     
     //imagePoint 十字
     for(int i=0;i<imagePoint.size();i++){
-        cv::circle(drawimg,imagePoint[i],3,Scalar(255,0,0));
+        cv::circle(drawimg,imagePoint[i],1,Scalar(255,0,0));
     }
 
     //显示
@@ -118,7 +118,7 @@ bool RobotPosition::setWorld(Mat inputimg, int flag)
 
 }
 
-bool RobotPosition::setWorld(vector<Point3f> MarkerPoint,vector<Point2f> imagePoint){
+bool RobotPosition::setWorld(vector<Point2f> imagePoint){
     Vec3d rvec, tvec;
     bool ret=cv::solvePnP(MarkerPoint,imagePoint,cam_M,cam_diff,rvec,tvec);
     if(ret==true){
@@ -253,6 +253,31 @@ void RobotPosition::getRobotPose(int id,Eigen::Vector3d &p, Eigen::Vector3d &rpy
             rpy=Eigen::Vector3d(0,0,robots[i].pose[2]);
         
         }
+    }
+}
+
+void RobotPosition::loadJsonConfig()
+{
+    //json
+    Json::Value json_root;
+    Json::Reader reader;
+    ifstream fs(cfg,ios::binary);
+    if(!reader.parse(fs,json_root)){
+        cout << "json data open error" << endl;
+		fs.close();
+    }
+
+    //MarkerPoint
+    for(int i=0;i<json_root["MarkerPoint"].size();i++){
+        if(json_root["MarkerPoint"][i].size()!=3){
+            perror("cfg MarkerPoint 格式有误，应该为3列");
+            return;
+        }
+        float x=json_root["MarkerPoint"][i][0].asFloat();
+        float y=json_root["MarkerPoint"][i][1].asFloat();
+        float z=json_root["MarkerPoint"][i][2].asFloat();
+        MarkerPoint.push_back(Point3f(x,y,z));
+  
     }
 }
 

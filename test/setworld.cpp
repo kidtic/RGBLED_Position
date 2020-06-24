@@ -58,6 +58,7 @@ int main(int argc, char const *argv[])
     //鼠标事件
     cv::namedWindow("drawAxis");
     cv::setMouseCallback("drawAxis",on_mouse,0);//调用回调函数
+    
 
     
     while(cap.read(frame))
@@ -65,7 +66,7 @@ int main(int argc, char const *argv[])
         //robot.drawWorldtoShow(frame);
         //测试用
 
-        robot.drawWorldtoShow(frame,objPoint,imgPoint);
+        robot.drawWorldtoShow(frame,imgPoint);
 
         int key=waitKey(10);
         if(key=='s'){
@@ -89,7 +90,7 @@ void on_mouse(int event,int x,int y,int flags,void *ustc)//event鼠标事件代�
     
     if (event == cv::EVENT_LBUTTONDOWN)//左键按下，读取初始坐标，并在图像上该点处划圆
     {
-        imgPoint.push_back(Point2f(x,y));
+        imgPoint.push_back(Point2f(x-2,y-4));
     }
     else if(event == cv::EVENT_LBUTTONUP){
        

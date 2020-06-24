@@ -9,6 +9,7 @@
 #include "eigen3/Eigen/Core"
 #include "System.h"
 #include <map>
+#include <jsoncpp/json/json.h>
 
 #include <g2o/types/slam2d/edge_se2.h>
 #include <g2o/types/sba/types_six_dof_expmap.h>
@@ -53,6 +54,7 @@ private:
     aruco::PREDEFINED_DICTIONARY_NAME ARtag_dict = aruco::DICT_6X6_250;
     uint8_t worldAR_ID=11;         //world artag id
 	float worldAR_size= 0.1745;	   //artag real size(m)
+    vector<Point3f> MarkerPoint;     //标定板上关键点的空间坐标，用于标定相机外参
 
     //机器人数量以及其信息
     vector<robotInfo> robots;
@@ -80,7 +82,7 @@ public:
     * @brief：识别世界坐标系并且imshow出来，但是不会set,这里用的自定义的点
     * @param：
     -----------------------------------------------------*/
-    void drawWorldtoShow(Mat inputimg,vector<Point3f> MarkerPoint,vector<Point2f> imagePoint);
+    void drawWorldtoShow(Mat inputimg,vector<Point2f> imagePoint);
 
 
     /*-----------------------------------------------------
@@ -98,7 +100,7 @@ public:
     *                     （0,0,0）
     *        imagePoint：输入上面的点在图像中对应的位置
     ------------------------------------------------------*/
-    bool setWorld(vector<Point3f> MarkerPoint,vector<Point2f> imagePoint);
+    bool setWorld(vector<Point2f> imagePoint);
 
 
     /*------------------------------------------------------
@@ -137,6 +139,14 @@ public:
     --------------------------------------------------------*/
     void getRobotPose(int id,Eigen::Vector3d &p, Eigen::Quaterniond &q);
     void getRobotPose(int id,Eigen::Vector3d &p, Eigen::Vector3d &rpy);
+
+    /*-------------------------------------------------------
+    * @brief：获取config.json里除了opencv格式以外的参数
+    * @param：id robot id
+    *         p: robot's position
+    *         q: robot's quater
+    --------------------------------------------------------*/
+    void loadJsonConfig();
 
 
 

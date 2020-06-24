@@ -40,6 +40,7 @@ if(NOT OpenCV_FOUND)
       message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
    endif()
 endif()
+find_package(jsoncpp  REQUIRED)
 
 find_package(Eigen3  REQUIRED)
 find_package(G2O REQUIRED )
@@ -50,6 +51,7 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 ${EIGEN3_INCLUDE_DIR}
 ${G2O_INCLUDE_DIRS}
+${JSONCPP_INCLUDE_DIRS}
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -67,6 +69,8 @@ target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${G2O_LIBS}
+${JSONCPP_LIBS}
+jsoncpp
 g2o_core g2o_stuff g2o_types_sba g2o_types_slam2d
 )
 
