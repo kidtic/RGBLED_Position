@@ -68,11 +68,17 @@ protected://data
     int codeID;//编码ID 
     //std::mutex mMutexCodeID;
 
-    //读取编码信息需要的变量
-    int mInterval=6;//读取信息的帧数间隔
-    int mpReadCodeImg;  //计数指针，在检测到R->G后，每隔3帧 读取一次编码信息
-    int mpReadCodeImg_fp=-1;//这个值为<=0的数，在检测到R->G后，等待多久开始读取一次编码信息，这样可以让编码值取在中间,重要！
-    int mpReadCodeCNT;//计数指针，在检测到R->G后，读取了多少信息，不超过codeLength
+    int64 startread_time;  //R->G跳变 的时间，以这个时间为起始时间。
+
+    //---------读取编码信息需要的变量
+    float fps=30;
+    //一个颜色保持时间为多长（ms）
+    float dt=200.0; 
+    //在startread_ftime=0的时候，应该是RG->Data的时间，初始化的时候应该是
+    //负数：15-dt  (ms)
+    float startread_ftime;
+    //计数指针，在检测到R->G后，读取了多少信息，不超过codeLength
+    int mpReadCodeCNT;
     //R-G跳变信息，codeStatus=finish的时候，rgtbStatus='S',
     //当检测到R的时候rgtbStatus='R',然后在检测到G的时候rgtbStatus='G'
     char rgtbStatus;
@@ -94,15 +100,15 @@ protected://data
 
 
 public:
-    TrackBlock(std::mutex *pMutex,Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength);
-    TrackBlock(Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength);
+    TrackBlock(std::mutex *pMutex,Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength,int64 time_stamp);
+    TrackBlock(Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength,int64 time_stamp);
     ~TrackBlock();
     
 
     //跟踪函数
     //输入当前帧的原始图像，会根据块区域来识别新的LED点在哪里
     //同时还会读取LED编码信息与上一帧的编码信息进行验证
-    eTrackStatus track(Mat srcinput);
+    eTrackStatus track(Mat srcinput,int64 time_stamp);
 
     //卡尔曼filter
     bool Kalmanfilter(Mat srcinput,char& rgbcode);
@@ -130,6 +136,7 @@ public:
     void setCenter(Point2f p);
     void setcodeID(int id);
     void setStatus(eTrackStatus status);
+    void setStartTime(int64 sttime);
     bool setTrackRect(Rect rt);
     //加锁
     void mutexLock();

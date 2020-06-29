@@ -68,7 +68,7 @@ int main(int argc, char const *argv[])
     robot.Init(frame);
     while(cap.read(frame))
     {
-        robot.position(frame);
+        robot.position(frame,getTickCount());
 
     }
 

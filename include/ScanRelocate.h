@@ -80,7 +80,7 @@ public:
     void delateTrackBlock(int index);//把没要的TrackBlock 删掉（状态不是准备态的）
 
     //专用于本线程的扫描全图，检测R->G
-    int scanFrame();
+    int scanFrame(int64 time_stamp);
 
     //线程主函数
     void Run();

@@ -184,10 +184,10 @@ void RobotPosition::addrobot(int id,map<int,Eigen::Vector3d> led)
 
 
 
-bool RobotPosition::position(Mat inputimg)
+bool RobotPosition::position(Mat inputimg,int64 timesp)
 {
     //led跟踪
-    pLEDtracker->run(inputimg);
+    pLEDtracker->run(inputimg,timesp);
     map<int,cv::Point2f> leduv = pLEDtracker->getLEDPoint();
     //对每个机器人解析led
     for(int i=0;i<robots.size();i++){

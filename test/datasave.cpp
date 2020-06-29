@@ -70,7 +70,7 @@ int main(int argc, char const *argv[])
     while (cap.read(frame))
     {
         //--------------------主入口
-        ledTrack.run(frame);
+        ledTrack.run(frame,getTickCount());
         
         //----------------画图
         ledTrack.drawObject(frame,LED_POSITION::System::BLOCK);

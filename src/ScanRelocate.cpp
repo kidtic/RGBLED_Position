@@ -48,7 +48,7 @@ ScanRelocate::~ScanRelocate()
 }
 
 
-int ScanRelocate::scanFrame()
+int ScanRelocate::scanFrame(int64 time_stamp)
 {
     int ret=0;
 
@@ -104,8 +104,8 @@ int ScanRelocate::scanFrame()
                     (iniCt.y+mTrackBlockWidth/2)<frame.rows-1&&
                     (iniCt.y-mTrackBlockWidth/2)>1  )
                     {
-                        //cout<<ledct[i]*sizek<<"     ,      "<<mTrackBlockWidth<<endl;
-                        mTrackBlocks.push_back(TrackBlock(&mMutexNO,frame,ledct[i]*sizek,mTrackBlockWidth,mTrackBlockCodeLen));
+                        cout<<"创建了一个tbs"<<endl;
+                        mTrackBlocks.push_back(TrackBlock(&mMutexNO,frame,ledct[i]*sizek,mTrackBlockWidth,mTrackBlockCodeLen,time_stamp));
                         ret=1;
                     }
             }
@@ -136,14 +136,17 @@ void ScanRelocate::Run()
                 
                 if(status==0)
                 {
-                    status=scanFrame();
+                    status=scanFrame(start);
                 }
                 else if(status==1)
                 {
+                    
                     for (size_t i = 0; i < mTrackBlocks.size(); i++)
                     {
-                        mTrackBlocks[i].track(frame);
+                        mTrackBlocks[i].track(frame,start);
+                        
                     }
+                    
                     //恢复sysBT
                     recoverBT();
                     //更具ID识别结果来删除
@@ -169,7 +172,7 @@ void ScanRelocate::Run()
         }
         else
         {
-            usleep(1000);
+            usleep(10);
         }
 
     }
@@ -284,10 +287,14 @@ void ScanRelocate::recoverBT()
                 {
                     cout<<"恢复ID："<<id<<endl;
                     mpSystem->mTrackBlocks[i].setStatus(TrackBlock::OK);
+                    mpSystem->mTrackBlocks[i].setStartTime(getTickCount());
                     mpSystem->mTrackBlocks[i].setCenter(mTrackBlocks[j].getCenter());
                     mpSystem->mTrackBlocks[i].setTrackRect(mTrackBlocks[j].getTrackRect());
 
 
+                }
+                else{
+                    cout<<"ID恢复失败："<<id<<"!="<<mTrackBlocks[j].getcodeID()<<endl;
                 }
             }
         }

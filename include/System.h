@@ -96,7 +96,7 @@ public:
             fixedw:是否固定跟踪框大小
             tbWidth:跟踪块大小 
     */
-    System(Mat frame0,double resizek,bool fixedw,int tbWidth=40);
+    System(Mat frame0,double resizek,bool fixedw,int tbWidth=20);
     ~System();
 
     //初始化函数
@@ -109,10 +109,10 @@ public:
     eSysStatus Init(Mat frameInput,vector<int> ids);
 
     //系统主程序
-    void position(Mat frameInput);
+    void position(Mat frameInput,int64 time_stamp);
 
     //系统运行函数系统总架构
-    void run(Mat frameInput);
+    void run(Mat frameInput,int64 time_stamp);
 
     //画图
     void drawObject(Mat& frameInput,drawType t);

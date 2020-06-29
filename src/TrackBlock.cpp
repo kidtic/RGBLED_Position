@@ -4,8 +4,9 @@
 namespace LED_POSITION
 {
 
-TrackBlock::TrackBlock(std::mutex *pMutex,Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength)
+TrackBlock::TrackBlock(std::mutex *pMutex,Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength,int64 time_stamp)
 {
+    startread_time=time_stamp;
     //mpSystem=pSys;
     pSysMutex=pMutex;
     //setCenter(initPoint);
@@ -31,7 +32,7 @@ TrackBlock::TrackBlock(std::mutex *pMutex,Mat srcinput,Point2f initPoint,int rec
     //setcodeID(-1);
     codeID=-1;
     mpReadCodeCNT=0;
-    mpReadCodeImg=mpReadCodeImg_fp;
+    startread_ftime=1000.0/fps-dt;
 
     //初始化图像块
     srcImgSize=srcinput.size();
@@ -51,9 +52,9 @@ TrackBlock::TrackBlock(std::mutex *pMutex,Mat srcinput,Point2f initPoint,int rec
     upper_red1=Scalar(10, 255,255);
     
 }
-TrackBlock::TrackBlock(Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength)
+TrackBlock::TrackBlock(Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLength,int64 time_stamp)
 {
-
+    startread_time=time_stamp;
     //setCenter(initPoint);
     ledCenter=initPoint;
     codeLength=mcodeLength;
@@ -77,7 +78,7 @@ TrackBlock::TrackBlock(Mat srcinput,Point2f initPoint,int rectwidth,int mcodeLen
     //setcodeID(-1);
     codeID=-1;
     mpReadCodeCNT=0;
-    mpReadCodeImg=mpReadCodeImg_fp;
+    startread_ftime=1000.0/fps-dt;
 
     //初始化图像块
     BlockImg=srcinput(rect);
@@ -101,220 +102,230 @@ TrackBlock::~TrackBlock()
 {
 }
 
-TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput)
+TrackBlock::eTrackStatus TrackBlock::track(Mat srcinput,int64 time_stamp)
 {
     char rgbcode; 
-    Kalmanfilter(srcinput,rgbcode);
-
-    if(getStatus()==PREPARE)
-    {  
-        //S4：根据读编码计数规则来更新codeCashe
-        //查看是否到了读取时间
-        if(mpReadCodeImg==mInterval-1)
-        {
-            mpReadCodeImg=0;
-            if(rgbcode=='G')
-            {
-                codeCashe[mpReadCodeCNT]=0;
-            }
-            else if(rgbcode=='B')
-            {
-                codeCashe[mpReadCodeCNT]=1;
-            }
-            else
-            {
-                cout<<"error:PREPARE:读取code错误 错误字节："<<mpReadCodeCNT<<endl;;
-                codeCashe[mpReadCodeCNT]=-9999;
-            }
-            mpReadCodeCNT++;
-            if(mpReadCodeCNT==codeLength)//读取完成
-            {
-                mutexLock();
-                codeID=0;
-                for (size_t i = 0; i < codeLength; i++)
-                {
-                    codeID+=codeCashe[i]*pow(2,i);
-                }
-                mutexUnLock();
-                codeStatus=FINISH;
-                rgtbStatus='S';
-                setStatus(OK);
-                mpReadCodeCNT=0;
-            }
-        }
-        else if(mpReadCodeImg<mInterval-1)
-            mpReadCodeImg++;
-    }
-    else if(getStatus()==OK)
-    {
-        if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
-        {
-            if(rgtbStatus=='S' && rgbcode=='R') rgtbStatus='R';
-            else if(rgtbStatus=='R' && rgbcode=='G')
-            {
-                rgtbStatus='G';
-                codeStatus=READING;
-                //cout<<"FINISH->READING"<<endl;
-                mpReadCodeImg=mpReadCodeImg_fp;//隔一帧再开始读，保障不读到边缘值
-                mpReadCodeCNT=0;
-            }
-            else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
-            {
-                setStatus(SUSPECTED_LOST);
-                cout<<"SUSPECTED_LOST: FINISH, NO RGB"<<endl;
-            }
-        }
-        else if(codeStatus==READING)
-        {
-            if(mpReadCodeImg==mInterval-1)
-            {
-                if(rgbcode=='G' || rgbcode=='B')
-                {
-                    mpReadCodeImg=0;
-                    if(rgbcode=='G')
-                        codeCashe[mpReadCodeCNT]=0;
-                    else if(rgbcode=='B')
-                        codeCashe[mpReadCodeCNT]=1;
-                    
-                    mpReadCodeCNT++;
-                    if(mpReadCodeCNT==codeLength)//读取完成
-                    {
-                        int mcodeID=0;
-                        for (size_t i = 0; i < codeLength; i++)
-                        {
-                            mcodeID+=codeCashe[i]*pow(2,i);
-                        }
-                        int readIDc=getcodeID();
-                        if(mcodeID==readIDc)//ID编码校验成功
-                        {
-                            IDNoMatchNUM=0;
-                            codeStatus=FINISH;
-                            rgtbStatus='S';
-                            setStatus(OK);
-                            mpReadCodeCNT=0;
-                        }
-                        else
-                        {
-                            IDNoMatchNUM++;
-                            if(IDNoMatchNUM>2){
-                                setStatus(LOSTING);
-                                rgtbStatus=NULL;
-                                cout<<"LOST :READING ;NO'G' 'B'"<<endl;
-                            }
-                            else{
-                                setStatus(SUSPECTED_LOST);
-                                codeStatus=FINISH;
-                                rgtbStatus='S';
-                                mpReadCodeCNT=0;
-                                cout<<"SUSPECTED_LOST: codeID cant match!"<<mcodeID<<endl;
-                            }
-                            
-                        }
-                        
-                        
-                        
-                    }
-                }
-                else
-                {
-                    setStatus(SUSPECTED_LOST);
-                    cout<<"SUSPECTED_LOST: READING，NO'G' 'B'"<<endl;
-                }
-                
-            }
-            else if(mpReadCodeImg<mInterval-1)
-                mpReadCodeImg++;
-        }
-    }
-    else if(getStatus()==SUSPECTED_LOST)
-    {
-        if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
-        {
-            if(rgtbStatus=='S' && rgbcode=='R')
-            {   
-                rgtbStatus='R';
-                setStatus(OK);
-            }
-            else if(rgtbStatus=='R' && rgbcode=='G')
-            {
-                rgtbStatus='G';
-                codeStatus=READING;
-                cout<<"FINISH->READING"<<endl;
-                mpReadCodeImg=mpReadCodeImg_fp;
-                mpReadCodeCNT=0;
-                setStatus(OK);
-            }
-            else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
-            {
-                setStatus(LOSTING);
-                rgtbStatus=NULL;
-                cout<<"LOST:FINISH ;NO RGB"<<endl;
-            }
-        }
-        else if(codeStatus==READING)
-        {
-            if(mpReadCodeImg==mInterval-1)
-            {
-                if(rgbcode=='G' || rgbcode=='B')
-                {
-                    mpReadCodeImg=0;
-                    setStatus(OK);
-                    if(rgbcode=='G')
-                    {
-                        codeCashe[mpReadCodeCNT]=0;
-                    }
-                    else if(rgbcode=='B')
-                    {
-                        codeCashe[mpReadCodeCNT]=1;
-                    }
-                    
-                    mpReadCodeCNT++;
-                    if(mpReadCodeCNT==codeLength)//读取完成
-                    {
-                        int mcodeID=0;
-                        for (size_t i = 0; i < codeLength; i++)
-                        {
-                            mcodeID+=codeCashe[i]*pow(2,i);
-                        }
-                        int readIDc=getcodeID();
-                        if(mcodeID==readIDc)//ID编码校验成功
-                        {
-                            codeStatus=FINISH;
-                            rgtbStatus='S';
-                            setStatus(OK);
-                            mpReadCodeCNT=0;
-                            mpReadCodeImg=0;
-                        }
-                        else
-                        {
-                            setStatus(LOSTING);
-                            cout<<"LOST: codeID cant match!"<<endl;
-                        }
-                        
-                    }
-                }
-                else
-                {
-                    setStatus(LOSTING);
-                    rgtbStatus=NULL;
-                    cout<<"LOST :READING ;NO'G' 'B'"<<endl;
-                }
-                
-            }
-            else if(mpReadCodeImg<mInterval-1)
-            {
-                if(rgbcode=='G' || rgbcode=='B')setStatus(OK);
-                mpReadCodeImg++;
-            }
-        }
-    }
-    else if(getStatus()==LOSTING)
-    {
+    if(getStatus()==LOSTING){
         codeStatus=FINISH;
         rgtbStatus='S';
     }
-    
+    else{
+        Kalmanfilter(srcinput,rgbcode);
+        if(getStatus()==PREPARE)
+        {  
+            //S4：根据读编码计数规则来更新codeCashe
+            //查看是否到了读取时间
+            int64 timenow=(time_stamp-startread_time)/1000000.0+startread_ftime; 
+            
+            if(timenow<mpReadCodeCNT*dt+0.6666*dt && timenow>mpReadCodeCNT*dt+0.3333*dt)
+            {
+                if(rgbcode=='G')
+                {
+                    codeCashe[mpReadCodeCNT]=0;
+                }
+                else if(rgbcode=='B')
+                {
+                    codeCashe[mpReadCodeCNT]=1;
+                }
+                else
+                {
+                    cout<<"error:PREPARE:读取code错误 错误字节："<<mpReadCodeCNT<<endl;;
+                    codeCashe[mpReadCodeCNT]=-9999;
+                }
+                mpReadCodeCNT++;
+                if(mpReadCodeCNT==codeLength)//读取完成
+                {
+                    mutexLock();
+                    codeID=0;
+                    for (size_t i = 0; i < codeLength; i++)
+                    {
+                        codeID+=codeCashe[i]*pow(2,i);
+                    }
+                    mutexUnLock();
+                    codeStatus=FINISH;
+                    rgtbStatus='S';
+                    setStatus(OK);
+                    mpReadCodeCNT=0;
+                }
+            }
+            
+        }
+        else if(getStatus()==OK)
+        {
+            
+            if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
+            {
+                int64 timenow=(time_stamp-startread_time)/1000000.0;
+                if(timenow>2000){
+                    setStatus(LOSTING);
+                    rgtbStatus=NULL;
+                }
 
+                if(rgtbStatus=='S' && rgbcode=='R') rgtbStatus='R';
+                else if(rgtbStatus=='R' && rgbcode=='G')
+                {
+                    rgtbStatus='G';
+                    codeStatus=READING;
+                    //cout<<"FINISH->READING"<<endl;
+                    startread_time=time_stamp;
+                    mpReadCodeCNT=0;
+                }
+                else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
+                {
+                    setStatus(SUSPECTED_LOST);
+                    cout<<"SUSPECTED_LOST: FINISH, NO RGB"<<endl;
+                }
+            }
+            else if(codeStatus==READING)
+            {
+                int64 timenow=(time_stamp-startread_time)/1000000.0+startread_ftime; 
+                if(timenow<mpReadCodeCNT*dt+0.6666*dt && timenow>mpReadCodeCNT*dt+0.3333*dt)
+                {
+                    if(rgbcode=='G' || rgbcode=='B')
+                    {
+                        if(rgbcode=='G')
+                            codeCashe[mpReadCodeCNT]=0;
+                        else if(rgbcode=='B')
+                            codeCashe[mpReadCodeCNT]=1;
+                        
+                        mpReadCodeCNT++;
+                        if(mpReadCodeCNT==codeLength)//读取完成
+                        {
+                            int mcodeID=0;
+                            for (size_t i = 0; i < codeLength; i++)
+                            {
+                                mcodeID+=codeCashe[i]*pow(2,i);
+                            }
+                            int readIDc=getcodeID();
+                            if(mcodeID==readIDc)//ID编码校验成功
+                            {
+                                IDNoMatchNUM=0;
+                                codeStatus=FINISH;
+                                rgtbStatus='S';
+                                setStatus(OK);
+                                mpReadCodeCNT=0;
+                            }
+                            else
+                            {
+                                IDNoMatchNUM++;
+                                if(IDNoMatchNUM>2){
+                                    setStatus(LOSTING);
+                                    rgtbStatus=NULL;
+                                    cout<<"LOST :READING ;NO'G' 'B'"<<endl;
+                                }
+                                else{
+                                    setStatus(SUSPECTED_LOST);
+                                    codeStatus=FINISH;
+                                    rgtbStatus='S';
+                                    mpReadCodeCNT=0;
+                                    cout<<"SUSPECTED_LOST: codeID cant match!"<<mcodeID<<endl;
+                                }
+                                
+                            }
+                            
+                            
+                            
+                        }
+                    }
+                    else
+                    {
+                        setStatus(SUSPECTED_LOST);
+                        cout<<"SUSPECTED_LOST: READING，NO'G' 'B'"<<endl;
+                    }
+                    
+                }
+                
+            }
+        }
+        else if(getStatus()==SUSPECTED_LOST)
+        {
+            if(codeStatus==FINISH)//这里不需要读取，只需要检测r->G的跳变
+            {
+                int64 timenow=(time_stamp-startread_time)/1000000.0;
+                if(timenow>2000){
+                    setStatus(LOSTING);
+                    rgtbStatus=NULL;
+                }
+                if(rgtbStatus=='S' && rgbcode=='R')
+                {   
+                    rgtbStatus='R';
+                    setStatus(OK);
+                }
+                else if(rgtbStatus=='R' && rgbcode=='G')
+                {
+                    rgtbStatus='G';
+                    codeStatus=READING;
+                    cout<<"FINISH->READING"<<endl;
+                    startread_time=time_stamp;
+                    mpReadCodeCNT=0;
+                    setStatus(OK);
+                }
+                else if(rgbcode!='R' && rgbcode!='G' && rgbcode!='B')
+                {
+                    setStatus(LOSTING);
+                    rgtbStatus=NULL;
+                    cout<<"LOST:FINISH ;NO RGB"<<endl;
+                }
+            }
+            else if(codeStatus==READING)
+            {
+                int64 timenow=(time_stamp-startread_time)/1000000.0+startread_ftime;
+                if(timenow<mpReadCodeCNT*dt+0.6666*dt && timenow>mpReadCodeCNT*dt+0.3333*dt)
+                {
+                    if(rgbcode=='G' || rgbcode=='B')
+                    {
+                        
+                        setStatus(OK);
+                        if(rgbcode=='G')
+                        {
+                            codeCashe[mpReadCodeCNT]=0;
+                        }
+                        else if(rgbcode=='B')
+                        {
+                            codeCashe[mpReadCodeCNT]=1;
+                        }
+                        
+                        mpReadCodeCNT++;
+                        if(mpReadCodeCNT==codeLength)//读取完成
+                        {
+                            int mcodeID=0;
+                            for (size_t i = 0; i < codeLength; i++)
+                            {
+                                mcodeID+=codeCashe[i]*pow(2,i);
+                            }
+                            int readIDc=getcodeID();
+                            if(mcodeID==readIDc)//ID编码校验成功
+                            {
+                                codeStatus=FINISH;
+                                rgtbStatus='S';
+                                setStatus(OK);
+                                mpReadCodeCNT=0;
+                            }
+                            else
+                            {
+                                setStatus(LOSTING);
+                                cout<<"LOST: codeID cant match!"<<endl;
+                            }
+                            
+                        }
+                    }
+                    else
+                    {
+                        setStatus(LOSTING);
+                        rgtbStatus=NULL;
+                        cout<<"LOST :READING ;NO'G' 'B'"<<endl;
+                    }
+                    
+                }
+                else{
+                    if(rgbcode=='G' || rgbcode=='B')setStatus(OK);
+                }
+                    
+                
+                
+            }
+        }
+    }
 
     BlockImg_pre=BlockImg_last.clone();
     BlockImg_last=BlockImg.clone();
@@ -616,6 +627,12 @@ void TrackBlock::setStatus(eTrackStatus status)
     unique_lock<mutex> lock(*pSysMutex);
     TrackStatus=status;
 }
+void TrackBlock::setStartTime(int64 sttime)
+{
+    unique_lock<mutex> lock(*pSysMutex);
+    startread_time=sttime;
+}
+
 
 bool TrackBlock::setTrackRect(Rect rt)
 {

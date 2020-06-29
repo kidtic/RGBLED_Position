@@ -31,6 +31,7 @@ System::System(Mat frame0,double resizek,bool fixedw,int tbWidth)
 
      fixedWidth=fixedw;
      mTrackBlockWidth=tbWidth;
+    
 
 
      //初始化重定位线程
@@ -50,6 +51,7 @@ System::eSysStatus System::Init(Mat frameInput)
 {
     eSysStatus ret=INIT;
     frame=frameInput;
+    int64 st_time=getTickCount();
     resize(frame,re_frame,lowSize);
 
     //如果检测到有轮廓点，那么就再检测一次下一帧的轮廓，
@@ -95,13 +97,14 @@ System::eSysStatus System::Init(Mat frameInput)
             for (size_t i = 0; i < ledct.size(); i++)
             {
                 Point2f iniCt=ledct[i]*sizek;
+                
                 //判断是否超界
                 if((iniCt.x+mTrackBlockWidth/2)<frame.cols-1&&
                     (iniCt.x-mTrackBlockWidth/2)>1 &&
                     (iniCt.y+mTrackBlockWidth/2)<frame.rows-1&&
                     (iniCt.y-mTrackBlockWidth/2)>1  )
                     {
-                        mTrackBlocks.push_back(TrackBlock(&mMutexTrackBlocks,frame,ledct[i]*sizek,mTrackBlockWidth,mTrackBlockCodeLen));
+                        mTrackBlocks.push_back(TrackBlock(&mMutexTrackBlocks,frame,ledct[i]*sizek,mTrackBlockWidth,mTrackBlockCodeLen,st_time));
                         ret=POSITION;
                     }
             }
@@ -124,11 +127,16 @@ System::eSysStatus System::Init(Mat frameInput,vector<int> ids)
 {
     frame=frameInput;
     resize(frame,re_frame,lowSize);
+    int64 st_time=getTickCount();
     //创建跟踪块
     for (size_t i = 0; i < ids.size(); i++)
     {
          
-        mTrackBlocks.push_back(TrackBlock(&mMutexTrackBlocks,frame,Point2f(frame.cols/2,frame.rows/2),mTrackBlockWidth,mTrackBlockCodeLen));
+        mTrackBlocks.push_back(TrackBlock(&mMutexTrackBlocks,frame,
+                    Point2f(frame.cols/2,frame.rows/2),
+                    mTrackBlockWidth,
+                    mTrackBlockCodeLen,
+                    st_time));
         mTrackBlocks[i].setStatus(TrackBlock::LOSTING);
         mTrackBlocks[i].setcodeID(ids[i]);
     
@@ -143,7 +151,7 @@ System::eSysStatus System::Init(Mat frameInput,vector<int> ids)
     return POSITION;
 }
 
-void System::position(Mat frameInput)
+void System::position(Mat frameInput,int64 time_stamp)
 {
     
     {
@@ -155,7 +163,7 @@ void System::position(Mat frameInput)
     
     for (size_t i = 0; i < mTrackBlocks.size(); i++)
     {
-        mTrackBlocks[i].track(frameInput);
+        mTrackBlocks[i].track(frameInput,time_stamp);
     }
     
     //frame_pre=frame_last.clone();
@@ -164,14 +172,14 @@ void System::position(Mat frameInput)
     //re_frame_last=re_frame.clone();
 }
 
-void System::run(Mat frameInput)
+void System::run(Mat frameInput,int64 time_stamp)
 {
     //--------------------主入口
     if(sysStatus==INIT)
         sysStatus=Init(frameInput);
     else if(sysStatus==POSITION)
     {
-        position(frameInput);
+        position(frameInput,time_stamp);
     }
 }
 
