@@ -122,7 +122,7 @@ public:
     * @param：inputimg：输入图片
     *         
     --------------------------------------------------------*/
-    bool position(Mat inputimg,int64 timesp);
+    bool position(Mat inputimg,int64 timesp,bool prtpose=false);
 
     /*-------------------------------------------------------
     * @brief：对于定高的机器人来说，只需要给其led的像素坐标即可求出空间xy坐标

@@ -184,7 +184,7 @@ void RobotPosition::addrobot(int id,map<int,Eigen::Vector3d> led)
 
 
 
-bool RobotPosition::position(Mat inputimg,int64 timesp)
+bool RobotPosition::position(Mat inputimg,int64 timesp,bool prtpose)
 {
     //led跟踪
     pLEDtracker->run(inputimg,timesp);
@@ -206,7 +206,7 @@ bool RobotPosition::position(Mat inputimg,int64 timesp)
             g2o::SE2 pose0(0,0,0);
             g2o::SE2 newpose = geomeCalculater.estimpose(z,p,pose0);
             robots[i].pose=newpose.inverse().toVector();
-            //cout<<"pose:\n"<<robots[i].pose<<endl;
+            if(prtpose)cout<<"pose:\n"<<robots[i].pose<<endl;
         }
     }
 }
