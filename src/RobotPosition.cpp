@@ -39,20 +39,36 @@ void RobotPosition::drawWorldtoShow(Mat inputimg, int flag)
     Mat drawimg;
     inputimg.copyTo(drawimg);
     //相机坐标系的位姿信息
-    vector< Vec3d > rvecs, tvecs;
-    vector<int> ids;
-    //dict
-    Ptr<aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(ARtag_dict);
+    
+    if(flag==WORLD_ARTAG){
+        vector< Vec3d > rvecs, tvecs;
+        vector<int> ids;
+        //dict
+        Ptr<aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(ARtag_dict);
 
-    //开始计算
-    vector<vector<Point2f> > corners;
-    cv::aruco::detectMarkers(inputimg, dictionary, corners, ids);
-    // 如果有AR码，则进行姿态估计
-    if (ids.size() > 0)
-    {
-        cv::aruco::estimatePoseSingleMarkers(corners, worldAR_size, cam_M, cam_diff, rvecs, tvecs);
-        cv::aruco::drawAxis(drawimg, cam_M, cam_diff, rvecs[0], tvecs[0], 1); 
+        //开始计算
+        vector<vector<Point2f> > corners;
+        cv::aruco::detectMarkers(inputimg, dictionary, corners, ids);
+        // 如果有AR码，则进行姿态估计
+        if (ids.size() > 0)
+        {
+            cv::aruco::estimatePoseSingleMarkers(corners, worldAR_size, cam_M, cam_diff, rvecs, tvecs);
+            cv::aruco::drawAxis(drawimg, cam_M, cam_diff, rvecs[0], tvecs[0], 1); 
+        }
     }
+    else if(flag==2){
+        Vec3d rvec,tvec;
+        
+
+        eigen2cv(cam_T.translation(),tvec);
+
+        Eigen::Quaterniond qi=cam_T.rotation();
+        Mat casheid;
+        eigen2cv(qi.matrix(),casheid);
+        cv::Rodrigues(casheid, rvec);
+        cv::aruco::drawAxis(drawimg, cam_M, cam_diff, rvec, tvec, 1);
+    }
+    
     
     
     imshow("drawAxis",drawimg);
@@ -146,10 +162,37 @@ void RobotPosition::saveCameraConfig()
     cfgfile.write("cam_mtx",cam_M);
     cfgfile.write("cam_diff",cam_diff);
     cfgfile.write("cam_r",r);
-    cfgfile.write("cam_t",t);
-
-    
+    cfgfile.write("cam_t",t); 
     cfgfile.release();
+
+    //json
+    //json
+    Json::Value json_root;
+    Json::Reader reader;
+    ifstream fs(cfg,ios::binary);
+    if(!reader.parse(fs,json_root)){
+        cout << "json data open error" << endl;
+		fs.close();
+    }
+    else{
+        cout<<json_root.toStyledString()<<endl;
+    }
+    for(int i=0;i<MarkerPoint.size();i++){
+        Json::Value pp;
+        pp.append(MarkerPoint[i].x);
+        pp.append(MarkerPoint[i].y);
+        pp.append(MarkerPoint[i].z);
+        json_root["MarkerPoint"].append(pp);
+    }
+
+    Json::StyledWriter wt;
+    string str = wt.write(json_root);
+    ofstream ofs(cfg);
+	ofs << str;
+	ofs.close();
+
+
+
 }
 
 void RobotPosition::loadCameraConfig()
