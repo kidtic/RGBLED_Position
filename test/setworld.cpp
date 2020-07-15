@@ -59,7 +59,7 @@ int main(int argc, char const *argv[])
     cv::namedWindow("drawAxis");
     cv::setMouseCallback("drawAxis",on_mouse,0);//调用回调函数
     
-
+    
     
     while(cap.read(frame))
     {

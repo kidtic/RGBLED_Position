@@ -81,8 +81,18 @@ public:
     /*----------------------------------------------------
     * @brief：识别世界坐标系并且imshow出来，但是不会set,这里用的自定义的点
     * @param：
+    *       inputimg：输入图片
+    *       imagePoint：标定板在图像上的坐标
     -----------------------------------------------------*/
     void drawWorldtoShow(Mat inputimg,vector<Point2f> imagePoint);
+
+    /*----------------------------------------------------
+    * @brief：识别世界坐标系并且imshow出来，但是不会set,这里用的自定义的点
+    * @param：
+    *       inputimg：输入图片
+    *       imagePoint：标定板在图像上的坐标
+    -----------------------------------------------------*/
+    void drawWorldtoShow(Mat inputimg,vector<Point2f> imagePoint,vector<Point3f> realPoint);
 
 
     /*-----------------------------------------------------
@@ -101,6 +111,15 @@ public:
     *        imagePoint：输入上面的点在图像中对应的位置
     ------------------------------------------------------*/
     bool setWorld(vector<Point2f> imagePoint);
+
+    /*-----------------------------------------------------
+    * @brief：设立世界坐标系，输入标定板的三位坐标，再输入通过手动输入
+    *         得到的对应的二维图像坐标点，再通过pnp解除相机外参数
+    * @param：MarkerPoint:imagePoint的真实坐标
+    *        imagePoint：输入上面的点在图像中对应的位置
+    ------------------------------------------------------*/
+    bool setWorld(vector<Point2f> imagePoint,vector<Point3f> realPoint);
+
 
 
     /*------------------------------------------------------
