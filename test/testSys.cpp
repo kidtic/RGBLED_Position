@@ -16,18 +16,34 @@ using namespace std;
 void v4l2_setting_focus(int val);
 void v4l2_setting_fps(int val);
 
+//针对视频帧率来设置读取速率
+bool video_flag=false;
+float video_fps;
+int64 video_tick=0;
+
+
 int main(int argc, char const *argv[])
 {
     VideoCapture cap;
     cout<<argc<<argv[0]<<endl;
     if(argc==2 && string(argv[1])=="rtsp"){
+        video_flag=false;
         string rtspstr="rtsp://admin:zou133zzq@192.168.123.110:554/cam/realmonitor?channel=1&amp;subtype=0&amp;unicast=true&amp;proto=Onvif";
         cap.open(rtspstr);
     }
     else if(argc==2 && string(argv[1])=="red"){
+        video_flag=true;
         cap.open("/home/kk/dataset/led/aimibot.mp4");
+        video_fps = cap.get(CAP_PROP_FPS);
+    }
+    else if(argc==3 && string(argv[1])=="red"){
+        video_flag=true;
+        cap.open(string(argv[2]));
+        video_fps = cap.get(CAP_PROP_FPS);
+        cout<<"fps:"<<video_fps<<endl;
     }
     else if(argc==2 && string(argv[1])=="0"){
+        video_flag=false;
         cap.open(0);
         //相机参数调整
         cap.set(cv::CAP_PROP_FPS,25);
@@ -63,20 +79,31 @@ int main(int argc, char const *argv[])
     int fi=0;
     //主循环
     vector<int> ids;
-    ids.push_back(1);
     ids.push_back(4);
-    ids.push_back(5);
+    //ids.push_back(7);
+    //ids.push_back(5);
     ledTrack.Init(frame,ids);
-    while (cap.read(frame))
+    video_tick=getTickCount();
+    while (1)
     {
+        //读取视频，如果是视频则需要按照帧率读取视频
+        if(video_flag==true){
+            //如果是视频流，那么一定要按照规定来执行run
+            while(getTickCount()<video_tick+1000000000/video_fps){}
+            video_tick=getTickCount();
+        }
+        if(!cap.read(frame))break;
+
         //--------------------主入口
         ledTrack.run(frame,getTickCount());
         
+        
         //----------------画图
         ledTrack.drawObject(frame,LED_POSITION::System::BLOCK);
+        
 
         //printf("FPS:%ld ms\n",(getTickCount()-start)/1000000);  
-        start=getTickCount();
+        //start=getTickCount();
 
 
         Mat resizeimg;
